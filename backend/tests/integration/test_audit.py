@@ -165,16 +165,30 @@ def test_list_newest_first_with_filters_and_cursor(session: Session) -> None:
     audit.record(session, actor_id=None, action="LOGIN_SUCCEEDED", object_type="app_user",
                  object_id="meera")  # fmt: skip
     page, cursor = audit.list_events(session, audit.AuditFilters(action="LOGIN_FAILED"), limit=2)
-    assert [e.object_id for e in page] == ["user4", "user3"] and cursor
+    assert [e.object_id for e, _ in page] == ["user4", "user3"] and cursor
     page2, cursor2 = audit.list_events(
         session, audit.AuditFilters(action="LOGIN_FAILED"), limit=2, cursor=cursor
     )
-    assert [e.object_id for e in page2] == ["user2", "user1"]
+    assert [e.object_id for e, _ in page2] == ["user2", "user1"]
     page3, cursor3 = audit.list_events(
         session, audit.AuditFilters(action="LOGIN_FAILED"), limit=2, cursor=cursor2
     )
-    assert [e.object_id for e in page3] == ["user0"] and cursor3 is None
+    assert [e.object_id for e, _ in page3] == ["user0"] and cursor3 is None
     assert len(audit.list_events(session, audit.AuditFilters(object_type="app_user"))[0]) == 6
     future = datetime.now(UTC) + timedelta(hours=1)
     assert audit.list_events(session, audit.AuditFilters(since=future))[0] == []
     assert audit.list_events(session, audit.AuditFilters(actor_id=uuid.uuid4()))[0] == []
+
+
+def test_list_filters_by_actor_username(session: Session) -> None:
+    uid = session.execute(
+        text("INSERT INTO app_user (username, password_hash, role) VALUES ('ana','x','ADMIN')"
+             " RETURNING id")
+    ).scalar_one()  # fmt: skip
+    _add(session, 2)
+    audit.record(session, actor_id=uid, action="USER_CREATED", object_type="app_user",
+                 object_id="u1")  # fmt: skip
+    page, _ = audit.list_events(session, audit.AuditFilters(actor="ana"))
+    assert [(e.action, name) for e, name in page] == [("USER_CREATED", "ana")]
+    everyone, _ = audit.list_events(session, audit.AuditFilters())
+    assert [name for _, name in everyone] == ["ana", None, None]

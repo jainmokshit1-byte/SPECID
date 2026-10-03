@@ -10,11 +10,12 @@ from sqlalchemy.orm import Session
 from app.db.models import AppUser, Cpse
 from app.db.session import get_session
 from app.schemas.auth import CpseOut, PasswordReset, UserCreate, UserOut
-from app.security.rbac import require_role
+from app.security.permissions import Action
+from app.security.rbac import require
 from app.services import users
 
 router = APIRouter(prefix="/users", tags=["users"])
-admin = require_role("ADMIN")
+admin = require(Action.MANAGE_USERS)
 
 
 class UserList(BaseModel):

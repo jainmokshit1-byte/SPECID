@@ -21,7 +21,7 @@ from typing import Any
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
-from app.db.models import AuditEvent
+from app.db.models import AppUser, AuditEvent
 from app.schemas.jsonb import AuditDiff
 from app.services.errors import Invalid
 
@@ -189,6 +189,7 @@ MAX_LIMIT = 500
 @dataclass(frozen=True)
 class AuditFilters:
     actor_id: uuid.UUID | None = None
+    actor: str | None = None  # username
     action: str | None = None
     object_type: str | None = None
     object_id: str | None = None
@@ -209,14 +210,21 @@ def encode_cursor(last_id: int) -> str:
 
 def list_events(
     session: Session, filters: AuditFilters, limit: int = 50, cursor: str | None = None
-) -> tuple[list[AuditEvent], str | None]:
-    """Newest first, keyset-paginated by id (TRD TR-API-04)."""
+) -> tuple[list[tuple[AuditEvent, str | None]], str | None]:
+    """Newest first, keyset-paginated by id (TR-API-04); each event with its actor's username."""
     limit = max(1, min(limit, MAX_LIMIT))
-    q = select(AuditEvent).order_by(AuditEvent.id.desc()).limit(limit + 1)
+    q = (
+        select(AuditEvent, AppUser.username)
+        .outerjoin(AppUser, AppUser.id == AuditEvent.actor_id)
+        .order_by(AuditEvent.id.desc())
+        .limit(limit + 1)
+    )
     if cursor:
         q = q.where(AuditEvent.id < _decode_cursor(cursor))
     if filters.actor_id:
         q = q.where(AuditEvent.actor_id == filters.actor_id)
+    if filters.actor:
+        q = q.where(AppUser.username == filters.actor)
     if filters.action:
         q = q.where(AuditEvent.action == filters.action)
     if filters.object_type:
@@ -227,6 +235,6 @@ def list_events(
         q = q.where(AuditEvent.ts >= filters.since)
     if filters.until:
         q = q.where(AuditEvent.ts < filters.until)
-    rows = list(session.scalars(q).all())
-    nxt = encode_cursor(rows[limit - 1].id) if len(rows) > limit else None
+    rows = [(e, name) for e, name in session.execute(q).all()]
+    nxt = encode_cursor(rows[limit - 1][0].id) if len(rows) > limit else None
     return rows[:limit], nxt

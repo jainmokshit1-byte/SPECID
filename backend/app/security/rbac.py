@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.db.models import AppUser
 from app.db.session import get_session
 from app.security.auth import decode_token
+from app.security.permissions import PERMISSIONS, Action
 from app.services import users
 from app.services.errors import Forbidden, Unauthorized
 from app.settings import Settings, get_settings
@@ -46,3 +47,10 @@ def require_role(*roles: str) -> Callable[..., AppUser]:
 
     dependency.allowed_roles = allowed  # type: ignore[attr-defined]  # read by the route guard test
     return dependency
+
+
+def require(action: Action) -> Callable[..., AppUser]:
+    """Role dependency for one row of the permission matrix (the usual way routers declare it)."""
+    dep = require_role(*PERMISSIONS[action])
+    dep.action = action  # type: ignore[attr-defined]
+    return dep

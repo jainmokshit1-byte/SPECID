@@ -13,7 +13,7 @@ import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, errors, health, users
+from app.api import audit, auth, errors, health, users
 from app.db.migrate import upgrade_head
 from app.settings import get_settings
 
@@ -88,3 +88,4 @@ errors.install(app)
 app.include_router(health.router, prefix=API_PREFIX)
 app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(users.router, prefix=API_PREFIX)
+app.include_router(audit.router, prefix=API_PREFIX)
