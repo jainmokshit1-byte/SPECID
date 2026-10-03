@@ -10,7 +10,7 @@ Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.
 |---|---|---|
 | Q-01 | Do the 2026 finale rules allow code written before the event? | **Open.** Treated as a preparation build |
 | Q-02 | Finale duration, team size, venue hardware, internet | **Open.** Assume 36 h and a team of 6 |
-| Q-03 | App Flow §2 says `/registry` is for "everyone except INTEGRATOR (API only)", but §3.2 shows INTEGRATOR the Registry item with the Codes and Search tabs. Which wins? (§2 also gives `/templates` to everyone while §3.2 hides Rules from INTEGRATOR; hiding is the stricter choice, so that one is harmless) | **Open; decide before Phase 6** (S8a is built there). Today the sidebar follows §3.2 and route access follows §2, so an INTEGRATOR would get "No access" on Codes once it is built. Pinned by a test in `nav.test.ts` |
+| Q-03 | App Flow §2 says `/registry` is for "everyone except INTEGRATOR (API only)", but §3.2 shows INTEGRATOR the Registry item with the Codes and Search tabs. Which wins? (§2 also gives `/templates` to everyone while §3.2 hides Rules from INTEGRATOR; hiding is the stricter choice, so that one is harmless) | **Resolved 2026-10-03 (DEC-19): §3.2 wins.** INTEGRATOR gets read-only `/registry`, `/registry/:cnmc` and `/search`; applied in Phase 6 with S8 (task below) |
 
 ## Standing decisions that affect later phases
 
@@ -26,6 +26,9 @@ Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.
 
 ### Phase 9 (in addition to the Implementation Plan's Phase 9 tasks)
 - [ ] **"Stay signed in" toast** 10 min before the 8 h token expiry, with a re-login dialog that keeps the page (App Flow 4.2; DEC-17)
+
+### Phase 6 (in addition to the Implementation Plan's Phase 6 tasks)
+- [ ] **INTEGRATOR read-only Registry (DEC-19)**: when S8 is built, add INTEGRATOR to the roles of `/registry` and `/registry/:cnmc` in `frontend/src/routes.ts` (`/search` already has it), remove `KNOWN_CONFLICTS` from `nav.test.ts`, and check the backend `ENDPOINTS` rows in `tests/api/test_rbac.py`: registry and crosswalk reads (API-15, API-17) use `Action.VIEW_REGISTRY`, which already includes INTEGRATOR; registry writes (merge, unmerge, migration actions) stay closed to INTEGRATOR
 
 ### Phase 8 (in addition to the Implementation Plan's Phase 8 tasks)
 - [ ] **Connect the API as `specid_app`** (Backend Schema Appendix B, §5.4; DEC-12): add an app DB password to `.env.example`, keep the owner URL for migrations and use the `specid_app` URL for requests, apply Appendix B after migrations, set `app.cpse_id` per request for the procurement RLS. Appendix B itself is already verified by `test_appendix_b_hardening_as_specid_app`
@@ -146,7 +149,7 @@ Stack rebuilt with `make up` (Git Bash with WinGet `make`), then `make seed` (0 
 | `LOGIN_SUCCEEDED` events appear in S12 | PASS | As auditor, `/audit?action=LOGIN_SUCCEEDED` lists 15 rows (#1–#16 except #8, which is `LOGIN_FAILED`), with actor, IST time ("03 Oct 2026, 18:08"), `app_user` and the user id. **Verify chain** → "Chain intact (16 events)" ([list](docs/evidence/phase3/s12-login-succeeded.png), [intact](docs/evidence/phase3/s12-verify-intact.png)). Test: `test_login_succeeded_events_are_listed` |
 
 ### Pending / known issues
-- **Q-03** (App Flow §2 vs §3.2 on `/registry` for INTEGRATOR): decide before Phase 6.
+- **Q-03** resolved by DEC-19 (App Flow §3.2 wins); the code change is a Phase 6 task.
 - **To be aligned in `impdocs/`** (not edited): PRD §8 (DEC-14 endpoints), Backend Schema §9.2 (`PASSWORD_CHANGED`, DEC-15).
 - The stack's audit log now holds the gate's events (logins, two `AUDIT_VERIFIED`, one `LOGIN_FAILED`); the chain is intact. `make seed` still writes no audit rows (DEC-11).
 - The "Stay signed in" toast is in Phase 9 (DEC-17). Until then an expired token sends the user to `/login?next=`.
