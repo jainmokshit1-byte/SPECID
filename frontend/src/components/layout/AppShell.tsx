@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
+import { useUser } from "../../auth/useAuth";
 import { useShowUnbuilt } from "../../hooks/useShowUnbuilt";
 import { navLocation, routePatternOf, visibleNav } from "../../nav";
 import { RUN_SCOPED_PATHS, SHELL_ROUTES } from "../../routes";
@@ -12,7 +13,8 @@ import { TopBar } from "./TopBar";
 export function AppShell() {
   const { pathname } = useLocation();
   const showUnbuilt = useShowUnbuilt();
-  const items = visibleNav(showUnbuilt);
+  const { role } = useUser();
+  const items = visibleNav(showUnbuilt, role);
   const pattern = routePatternOf(pathname);
   const here = navLocation(pattern);
   const route = SHELL_ROUTES.find((r) => r.path === pattern);

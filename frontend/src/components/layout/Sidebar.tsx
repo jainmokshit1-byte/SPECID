@@ -23,7 +23,8 @@ const ICONS: Record<NavItemId, LucideIcon> = {
 };
 
 /** Left sidebar, App Flow 3.1: task items at the top, Rules and Help at the bottom. An item links
- * to its first visible tab. Role filtering (3.2) and the review/consent badges come later. */
+ * to its first visible tab; items are already filtered by role (3.2). Review/consent badges come
+ * with S5 and S18 (Phase 6). */
 export function Sidebar({ items, activeId }: { items: VisibleItem[]; activeId: NavItemId | null }) {
   const top = items.filter((i) => !i.bottom);
   const bottom = items.filter((i) => i.bottom);

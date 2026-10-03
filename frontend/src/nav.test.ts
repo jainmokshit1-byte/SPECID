@@ -1,18 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { NAV_ITEMS, type NavItem, navLocation, routePatternOf, visibleNav } from "./nav";
-import { SHELL_ROUTES } from "./routes";
+import { type Role, SHELL_ROUTES } from "./routes";
+
+const ALL: Role[] = ["MAKER", "CHECKER", "ADMIN", "AUDITOR", "INTEGRATOR"];
 
 const FIXTURE: NavItem[] = [
-  { id: "home", label: "Home", tabs: [{ label: "Home", path: "/" }] },
+  { id: "home", label: "Home", tabs: [{ label: "Home", path: "/", roles: ALL }] },
   {
     id: "review",
     label: "Review",
     tabs: [
-      { label: "To review", path: "/review" },
-      { label: "Consents", path: "/consents" },
+      { label: "To review", path: "/review", roles: ["MAKER", "CHECKER"] },
+      { label: "Consents", path: "/consents", roles: ["CHECKER"] },
     ],
   },
-  { id: "help", label: "Help", bottom: true, tabs: [{ label: "About", path: "/about" }] },
+  {
+    id: "help",
+    label: "Help",
+    bottom: true,
+    tabs: [{ label: "About", path: "/about", roles: ALL }],
+  },
 ];
 
 describe("nav model (App Flow 3.1)", () => {
@@ -48,20 +55,20 @@ describe("nav model (App Flow 3.1)", () => {
 
 describe("visibleNav", () => {
   it("hides unbuilt tabs, and items left with no tab", () => {
-    const v = visibleNav(false, FIXTURE, new Set(["/", "/consents"]));
+    const v = visibleNav(false, "CHECKER", FIXTURE, new Set(["/", "/consents"]));
     expect(v.map((i) => i.label)).toEqual(["Home", "Review"]);
     expect(v[1]!.tabs.map((t) => t.label)).toEqual(["Consents"]);
   });
 
   it("developer switch shows everything and marks unbuilt tabs", () => {
-    const v = visibleNav(true, FIXTURE, new Set(["/"]));
+    const v = visibleNav(true, "CHECKER", FIXTURE, new Set(["/"]));
     expect(v.map((i) => i.label)).toEqual(["Home", "Review", "Help"]);
     expect(v[1]!.tabs.map((t) => t.built)).toEqual([false, false]);
     expect(v[0]!.tabs[0]!.built).toBe(true);
   });
 
   it("never exceeds seven items", () => {
-    expect(visibleNav(true).length).toBeLessThanOrEqual(7);
+    for (const role of ALL) expect(visibleNav(true, role).length).toBeLessThanOrEqual(7);
   });
 });
 
@@ -81,5 +88,82 @@ describe("routePatternOf / navLocation", () => {
   it("unknown URL has no pattern and no item", () => {
     expect(routePatternOf("/nope")).toBeNull();
     expect(navLocation(null)).toBeNull();
+  });
+});
+
+// App Flow 3.2, sidebar visibility by role: item -> visible tabs, with every screen built.
+const APP_FLOW_3_2: Record<Role, Record<string, string[]>> = {
+  MAKER: {
+    Home: ["Home"],
+    Data: ["Upload", "Matching runs"],
+    Review: ["To review", "Look-alikes"],
+    Registry: ["Codes", "Search", "Exports"],
+    Results: ["Evaluation"],
+    Rules: ["Rulebook"],
+    Help: ["About"],
+  },
+  CHECKER: {
+    Home: ["Home"],
+    Data: ["Upload", "Matching runs"],
+    Review: ["To review", "Consents", "Look-alikes"],
+    Registry: ["Codes", "Search", "Exports"],
+    Results: ["Evaluation"],
+    Rules: ["Rulebook"],
+    Help: ["About"],
+  },
+  ADMIN: {
+    Home: ["Home"],
+    Data: ["Upload", "Matching runs"],
+    Review: ["Look-alikes"],
+    Registry: ["Codes", "Search", "Exports"],
+    Results: ["Evaluation"],
+    Rules: ["Rulebook", "Audit", "Users"],
+    Help: ["About"],
+  },
+  AUDITOR: {
+    Home: ["Home"],
+    Review: ["Look-alikes"],
+    Registry: ["Codes"],
+    Results: ["Evaluation"],
+    Rules: ["Rulebook", "Audit"],
+    Help: ["About"],
+  },
+  INTEGRATOR: { Registry: ["Codes", "Search"], Help: ["About"] },
+};
+
+describe("role filtering (App Flow 3.2)", () => {
+  const everything = new Set(NAV_ITEMS.flatMap((i) => i.tabs.map((t) => t.path)));
+
+  it.each(ALL)("%s sees exactly the App Flow 3.2 items and tabs", (role) => {
+    const got = Object.fromEntries(
+      visibleNav(false, role, NAV_ITEMS, everything).map((i) => [
+        i.label,
+        i.tabs.map((t) => t.label),
+      ]),
+    );
+    expect(got).toEqual(APP_FLOW_3_2[role]);
+  });
+
+  it("an INTEGRATOR sees two items once built; nothing before Phase 7", () => {
+    expect(visibleNav(false, "INTEGRATOR", NAV_ITEMS, everything)).toHaveLength(2);
+    expect(visibleNav(false, "INTEGRATOR")).toEqual([]);
+  });
+
+  it("the developer switch never shows a tab the role may not see", () => {
+    const tabs = visibleNav(true, "MAKER").flatMap((i) => i.tabs.map((t) => t.label));
+    expect(tabs).not.toContain("Consents");
+    expect(tabs).not.toContain("Audit");
+    expect(tabs).not.toContain("Users");
+  });
+
+  // App Flow 2 vs 3.2 disagree on /registry for INTEGRATOR (PROGRESS.md Q-03, before Phase 6).
+  const KNOWN_CONFLICTS: Record<string, Role[]> = { "/registry": ["INTEGRATOR"] };
+
+  it("a tab never offers a route its role cannot open (except open question Q-03)", () => {
+    for (const tab of NAV_ITEMS.flatMap((i) => i.tabs)) {
+      const route = SHELL_ROUTES.find((r) => r.path === tab.path)!;
+      const extra = tab.roles.filter((r) => !route.roles.includes(r));
+      expect(extra, tab.path).toEqual(KNOWN_CONFLICTS[tab.path] ?? []);
+    }
   });
 });
