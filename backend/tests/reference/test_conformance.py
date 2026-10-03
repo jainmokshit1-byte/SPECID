@@ -99,9 +99,13 @@ def _ref_input(text: str) -> str:
     raise AssertionError(f"reference fixed point not reached in {REF_MAX_PASSES} passes")
 
 
-def _dev1(ref_short: Any) -> bool:
-    """DEV-1 applies when the reference fails on, or prints, a missing value."""
-    return isinstance(ref_short, Exception) or "None" in ref_short or "?IN" in ref_short
+def _dev1(ref_full: Any) -> bool:
+    """DEV-1 applies when the reference fails on, or prints, a missing value.
+
+    `ref_full` is the reference short text without the 40-character limit, so a text that is
+    too long only because it prints `CLNone` is recognised too.
+    """
+    return isinstance(ref_full, Exception) or "None" in ref_full or "?IN" in ref_full
 
 
 def _dev2(ra: dict[str, Any], rb: dict[str, Any]) -> bool:
@@ -155,9 +159,9 @@ def _rows_ref(r: dict[str, Any]) -> list[tuple[Any, ...]]:
     return [tuple(e[k] for k in keys) for e in r["evidence"]]
 
 
-def _short_ref(x: str) -> Any:
+def _short_ref(x: str, limit: int = 40) -> Any:
     try:
-        return R.short_desc(R.extract(x))
+        return R.short_desc(R.extract(x), limit)
     except Exception as exc:  # the reference raises on some missing values (DEV-1)
         return exc
 
@@ -171,9 +175,8 @@ def assert_conforms(x: str, y: str) -> None:
         if R.extract(tr)["category"] is not None:
             from app.core.shortdesc import short_desc
 
-            ref_short = _short_ref(tr)
-            if not _dev1(ref_short):
-                assert short_desc(E(t)) == ref_short, t
+            if not _dev1(_short_ref(tr, limit=10**6)):
+                assert short_desc(E(t)) == _short_ref(tr), t
 
     ra, rb = R.extract(xr), R.extract(yr)
     ref, core = R.decide(ra, rb), D(E(x), E(y))
@@ -404,3 +407,19 @@ def test_dev5_scope_and_planted_differences(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setattr(sys.modules[__name__], "D", drifted_route)
     with pytest.raises(AssertionError):  # inside DEV-5 the route must still match
         assert_make_conforms(x, y, ("X-1", "ACME"), ("X-1", None))
+
+
+def test_core_conforms_on_seed_7_generator_output() -> None:
+    """Every truth pair of the seed-7 dataset (DEC-09 size), compared with the reference."""
+    from app.eval.generator import GeneratorConfig, generate
+
+    gen = generate(GeneratorConfig())
+    text = {
+        f"CPSE-{c}:{r['legacy_code']}": r["long_text"] or r["short_text"]
+        for c, rows in gen.records.items()
+        for r in rows
+    }
+    for p in gen.truth_pairs:
+        a = text[f"{p['cpse_a']}:{p['legacy_code_a']}"]
+        b = text[f"{p['cpse_b']}:{p['legacy_code_b']}"]
+        assert_conforms(a, b)

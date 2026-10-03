@@ -1,0 +1,95 @@
+{
+  "config": {
+    "category_mix": [
+      [
+        "VALVE",
+        0.25
+      ],
+      [
+        "PIPE",
+        0.25
+      ],
+      [
+        "FLANGE",
+        0.2
+      ],
+      [
+        "FASTENER",
+        0.2
+      ],
+      [
+        "MOTOR",
+        0.1
+      ]
+    ],
+    "cpses": [
+      "A",
+      "B",
+      "C"
+    ],
+    "drop_core_rate": 0.05,
+    "drop_ext_rate": 0.3,
+    "hard_negative_share": 0.3,
+    "make_rate": 0.4,
+    "n_entities": 1200,
+    "presence": [
+      0.4,
+      0.4,
+      0.2
+    ],
+    "seed": 7,
+    "splits": [
+      [
+        "train",
+        0.6
+      ],
+      [
+        "validation",
+        0.2
+      ],
+      [
+        "test",
+        0.2
+      ]
+    ],
+    "typo_rate": 0.02,
+    "within_dup_rate": 0.1
+  },
+  "counts": {
+    "entities": 1499,
+    "pairs_equivalent": 2166,
+    "pairs_not_equivalent_hard": 1217,
+    "records": 3023,
+    "records_per_cpse": {
+      "CPSE-A": 993,
+      "CPSE-B": 1019,
+      "CPSE-C": 1011
+    }
+  },
+  "files": {
+    "cpse_A.csv": {
+      "bytes": 70080,
+      "sha256": "3bd3ba50d740e0b17245a6cecdb0e34642a2989613a69c101c3b6c6c57bb8743"
+    },
+    "cpse_B.csv": {
+      "bytes": 130210,
+      "sha256": "796ece1417e6e8335ea22587115cbc46bee8c43835914f50005f7e7b1c0877fd"
+    },
+    "cpse_C.csv": {
+      "bytes": 66784,
+      "sha256": "0ef024986e47715d5dc5f86d94ecb1970f45c9787f1fe8b7edfe5426dcf13a6b"
+    },
+    "truth_entities.csv": {
+      "bytes": 476597,
+      "sha256": "73f63871253934724aaec56323a3c25d3bd890f57e8b0fa62d47a030c4e46b7e"
+    },
+    "truth_pairs.csv": {
+      "bytes": 156470,
+      "sha256": "69b7f86542072449eaa3a3a7c0f8d2e0e8a625e34528a9de39ba11ceb2a51d6e"
+    }
+  },
+  "generator_version": "0.1.0",
+  "honesty": "Synthetic data written by the team that wrote the rules; optimistic by construction; not a measure of performance on real CPSE data.",
+  "seed": 7,
+  "synthetic": true
+}

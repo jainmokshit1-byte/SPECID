@@ -37,9 +37,9 @@ down:
 seed:
 	docker compose exec -T api python -m app.db.seed
 
-## regenerate synthetic files and manifest (SEED=$(SEED))
+## regenerate synthetic files and manifest (SEED=$(SEED)); about 3,000 records (DEC-09)
 demo-data:
-	$(call stub,4)
+	docker compose exec -T api python -m app.cli generate --seed $(SEED) --out data/synthetic/seed-$(SEED)
 
 ## CI test set, run locally in containers (mirror of .github/workflows/ci.yml, lint included)
 test:
