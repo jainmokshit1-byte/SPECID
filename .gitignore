@@ -1,0 +1,37 @@
+# secrets
+.env
+
+# models (pre-downloaded, large); manifest is committed
+models/*
+!models/manifest.json
+!models/.gitkeep
+
+# generated synthetic data; manifests are committed
+data/synthetic/*
+!data/synthetic/.gitkeep
+!data/synthetic/**/manifest.json
+data/uploads/
+data/reports/
+data/snapshots/
+
+# python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+.venv/
+
+# node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

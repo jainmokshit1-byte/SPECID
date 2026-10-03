@@ -1,0 +1,69 @@
+name: specid
+
+# TRD v1.1 Appendix A. Deviations (logged in docs/DECISIONS.md): GIT_COMMIT on api (DEC-02),
+# mem_limit on api and db (DEC-11).
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: specid
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      POSTGRES_DB: specid
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U specid -d specid"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 1g
+    networks: [backend]
+
+  api:
+    build: ./backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://specid:${DB_PASSWORD}@db:5432/specid
+      DB_HOST: db
+      MODEL_DIR: /models
+      TEMPLATE_DIR: /app/templates
+      GIT_COMMIT: ${GIT_COMMIT:-unknown}
+    volumes:
+      - ./models:/models:ro
+      - ./templates:/app/templates:ro
+      - ./data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    mem_limit: 4g
+    networks: [backend]
+
+  web:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [backend, frontend]
+
+  ollama:                      # P2, off unless: docker compose --profile llm up
+    image: ollama/ollama
+    profiles: [llm]
+    volumes:
+      - ./models/ollama:/root/.ollama
+    networks: [backend]
+
+networks:
+  backend:
+    internal: true             # no route to the internet (FR-1462)
+  frontend: {}
+
+volumes:
+  pgdata: {}
