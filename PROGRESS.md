@@ -1,6 +1,6 @@
 # PROGRESS
 
-Current phase: **Phase 2 · Database — done** (gate PASS, see below). Phase 1 done with 2 criteria PENDING; shell revised to the v1.2 minimal UI (DEC-10). Next: Phase 3 · Auth, RBAC and audit (awaiting approval of its plan).
+Current phase: **Phase 3 · Auth, RBAC and audit — done** (gate PASS, see below). Phase 2 done (gate PASS). Phase 1 done with 2 criteria PENDING. Next: Phase 4 · Core engine (awaiting approval of its plan).
 
 Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.5 P0**. Deviations: [docs/DECISIONS.md](docs/DECISIONS.md).
 
@@ -10,6 +10,7 @@ Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.
 |---|---|---|
 | Q-01 | Do the 2026 finale rules allow code written before the event? | **Open.** Treated as a preparation build |
 | Q-02 | Finale duration, team size, venue hardware, internet | **Open.** Assume 36 h and a team of 6 |
+| Q-03 | App Flow §2 says `/registry` is for "everyone except INTEGRATOR (API only)", but §3.2 shows INTEGRATOR the Registry item with the Codes and Search tabs. Which wins? (§2 also gives `/templates` to everyone while §3.2 hides Rules from INTEGRATOR; hiding is the stricter choice, so that one is harmless) | **Open; decide before Phase 6** (S8a is built there). Today the sidebar follows §3.2 and route access follows §2, so an INTEGRATOR would get "No access" on Codes once it is built. Pinned by a test in `nav.test.ts` |
 
 ## Standing decisions that affect later phases
 
@@ -17,9 +18,14 @@ Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.
 - **Navigation (DEC-10):** each phase adds the paths of the screens it builds to `BUILT_PATHS` in `frontend/src/routes.ts`; only then do they appear in the sidebar and tabs. Developer switch `?dev=1` (dev server only) shows the rest.
 - **Template activation (DEC-04):** golden tests + ADMIN acknowledgement of the impact preview; no second ADMIN.
 - **Seed and audit (DEC-11):** `make seed` writes no `audit_event` rows; the hash chain starts with the first real action in Phase 3.
+- **Auth and audit (Phase 3):** every new endpoint declares `require(Action.X)` from `security/permissions.py` and gets a row in `ENDPOINTS` in `tests/api/test_rbac.py` (the guard test fails otherwise). Every state change calls `services/audit.record()` in the same transaction; the router commits.
+- **No invented numbers (DEC-16):** Home cards show counts only when they come from data (S5/S18 in Phase 6).
 - **Seed content (DEC-13):** gasket v1 is DRAFT; UNSPSC_MAP v1 is empty until a code is verified with a source note; `RunConfig` defaults arrive with `settings.RunDefaults` in Phase 5.
 
 ## Tasks added to later phases
+
+### Phase 9 (in addition to the Implementation Plan's Phase 9 tasks)
+- [ ] **"Stay signed in" toast** 10 min before the 8 h token expiry, with a re-login dialog that keeps the page (App Flow 4.2; DEC-17)
 
 ### Phase 8 (in addition to the Implementation Plan's Phase 8 tasks)
 - [ ] **Connect the API as `specid_app`** (Backend Schema Appendix B, §5.4; DEC-12): add an app DB password to `.env.example`, keep the owner URL for migrations and use the `specid_app` URL for requests, apply Appendix B after migrations, set `app.cpse_id` per request for the procurement RLS. Appendix B itself is already verified by `test_appendix_b_hardening_as_specid_app`
@@ -97,3 +103,53 @@ Done (App Flow v1.2 §3.1–3.3, §4.3; UI/UX brief v1.2 §1.4, §4, §6, §7.1)
 - The API connects as the DB owner until Phase 8 (DEC-12).
 - `change_notice.delta` has no shape in §6 yet. A Pydantic model will be added with SF-12 (P1).
 - Starlette prints a deprecation warning about `httpx` in the TestClient (harmless; versions frozen).
+
+## Phase 3 · Auth, RBAC and audit
+
+### Done
+- **T1 RFC 7807** (TR-API-03): `services/errors.py` has the typed exceptions (`Invalid`, `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`, `RateLimited`). `api/errors.py` turns them, HTTP errors and validation errors into `application/problem+json`. Validation `errors[]` never echo input values. 429 sets `Retry-After`, 401 sets `WWW-Authenticate: Bearer`
+- **T2 audit service** (TR-ALG-09, TR-MOD-29, FR-1302): `services/audit.py`
+  - `record()` runs in the caller's transaction: `pg_advisory_xact_lock(4242)`, then the last hash, then SHA-256 of `(prev or "GENESIS") + canonical JSON`. `ts` is set in Python (UTC, microseconds). Before/after are checked against the no-secrets contract
+  - `verify()` reads in chunks of 10,000 and reports the first bad id (an edited row, or a deleted row through the broken link)
+  - `verify_and_record()` writes `AUDIT_VERIFIED`. `list_events()` filters by actor username, action, object, date range, with keyset cursor pagination
+- **T3 auth** (TR-SEC-01/02, TR-API-02/08, FR-1301; DEC-14, DEC-15):
+  - `security/auth.py`: bcrypt cost 12 with a constant-time check, minimum length 10. JWT HS256, 8 h, claims `sub`, `role`, `cpse_id`
+  - `security/ratelimit.py`: token bucket, 5 per minute per username
+  - `services/users.py` and routers `POST /auth/login`, `GET /me`, `POST /me/password`, `GET/POST /users`, `POST /users/{id}/reset-password`, `POST /users/{id}/disable`
+  - Audit actions `LOGIN_SUCCEEDED`, `LOGIN_FAILED`, `USER_CREATED`, `PASSWORD_RESET`, `PASSWORD_CHANGED`, `USER_DISABLED`
+  - Every request reloads the user, so a disabled user's token stops working at once and the role claim is never trusted. The seed now uses the same `hash_password`
+- **T4 RBAC** (TR-SEC-03, TR-TST-05): `security/permissions.py` encodes the PRD §2 matrix once (`Action → roles`, plus API-37 consent). `security/rbac.py` has `current_user`, `require_role(*roles)` and `require(action)`. `GET /audit` and `GET /audit/verify` need `VIEW_AUDIT`. `test_rbac.py`:
+  - reads every route from the app (`iter_route_contexts`, FastAPI 0.142) and fails if a non-public route has no role dependency or differs from its matrix row
+  - tests every endpoint × every role (allowed or 403), plus 401 without a token
+- **T5 UI auth** (App Flow 3.2, 3.3, 4.2–4.4):
+  - `auth/session.ts`: token in memory, mirrored in `sessionStorage`, never `localStorage`, dropped at expiry. `AuthProvider` and `RequireAuth`; any 401 → `/login?next=<URL>`
+  - Login → `next` if the role may open it, otherwise the role home (`/`; INTEGRATOR `/search`)
+  - Login page shows the 401 and 429 messages. A route the role may not open shows the "No access" panel (App Flow 4.4)
+  - Sidebar filtered by role with per-tab roles exactly as App Flow 3.2. User menu: name, role, CPSE, Change password, Logout
+  - Forced change-password dialog when `must_change_password` is true (cannot be dismissed); never for demo users with `SEED_DEMO_USERS=true` (tested in the backend seed test and the frontend). Next-step card per role (DEC-16)
+  - Air-gap and Help stay hidden (not built)
+- **T6 screens**: S12 Audit (`/audit`) and S16 Users (`/admin/users`)
+  - S12: filters in the query string, IST times, rows expand to before/after JSON and hashes, **Verify chain** with "Chain intact (n events)" or "Chain broken at event #k" and a link to that row (`#event=k`), empty states from App Flow 8.2
+  - S16: list, Add user (CPSE required for MAKER/CHECKER), Reset password, Disable (not one's own account). API keys are P1, not shown
+  - `BUILT_PATHS` = `/`, `/login`, `/audit`, `/admin/users`
+- Added pinned `@radix-ui/react-dialog` 1.1.23 (DEC-18)
+- Test totals: backend **227 passed** (was 109). Frontend **115 passed** (was 61). `sh backend/scripts/ci_local.sh all` → `== local CI: all passed ==` (ruff, black, pytest with the coverage gate, eslint, prettier, vitest, tsc, vite build)
+
+### Gate: "Done when" criteria
+Stack rebuilt with `make up` (Git Bash with WinGet `make`), then `make seed` (0 added, already seeded). Browser checks ran in headless Chrome 154 at 1366×768 against `http://127.0.0.1:8080`, driven over CDP by a throwaway puppeteer-core script in the scratchpad.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| Each demo user logs in and lands on the correct home | PASS | **API through nginx:** `POST /api/v1/auth/login` → 200 for meera MAKER, arjun CHECKER, kavya CHECKER, admin ADMIN, auditor AUDITOR, erp INTEGRATOR, each with `must_change_password: false` and `expires_at` 8 h ahead. `GET /me` returns CPSE-A, CPSE-B, CPSE-C and none, none, none. **Browser** (opening `/` first redirects to `/login?next=%2F`):<br>• meera, arjun, kavya → `/` with the first-run checklist; sidebar `[Home]`<br>• admin → `/`; sidebar `[Home, Rules]`<br>• auditor → `/` with the card "Verify the audit chain … Open audit"; sidebar `[Home, Rules]`<br>• erp → `/search`; sidebar empty (DEC-16)<br>Token only in `sessionStorage`; `localStorage` empty. User menu e.g. "Kavya · CHECKER · CPSE-C · Change password · Logout". Screenshots: [meera](docs/evidence/phase3/login-meera-home.png), [kavya menu](docs/evidence/phase3/login-kavya-menu.png), [admin](docs/evidence/phase3/login-admin-home.png), [auditor](docs/evidence/phase3/login-auditor-home.png), [erp](docs/evidence/phase3/login-erp-home.png), [S16](docs/evidence/phase3/s16-users.png). Tests: `test_each_demo_user_logs_in_with_role_and_claims` ×6, `auth.test.tsx` (landing, `next`, role homes) |
+| A MAKER calling an ADMIN endpoint gets 403 | PASS | `curl -H "Authorization: Bearer <meera>" 127.0.0.1:8080/api/v1/users` → `HTTP/1.1 403 Forbidden` `{"type":"https://specid.local/problems/forbidden","title":"No access","status":403,"detail":"The MAKER role cannot do this.","instance":"/api/v1/users"}`. Same for `/audit/verify`. In the browser, meera on `/admin/users` gets the "No access" panel and the API answers 403 ([screenshot](docs/evidence/phase3/maker-admin-users-403.png)). Tests: `test_maker_calling_admin_endpoint_gets_403` and 48 per-role cases generated from the matrix |
+| Tamper test (disable trigger as owner, edit a row) makes verify report that event id | PASS | On the stack DB, a plain `UPDATE audit_event …` → `ERROR: audit_event is append-only`. Then as owner: `BEGIN; ALTER TABLE audit_event DISABLE TRIGGER audit_event_no_update_delete; UPDATE … id = 9; ENABLE …; COMMIT`. S12 **Verify chain** → "Chain broken at event #9". "Show event #9" opens the row with the edited value ([banner](docs/evidence/phase3/s12-verify-broken.png), [row](docs/evidence/phase3/s12-broken-event-row.png)). The original value was then put back the same way: `GET /audit/verify` → `{"ok":true,"events":20,"first_bad_id":null}`, both triggers enabled (`tgenabled = O`). Tests: `test_tamper_disable_trigger_and_edit_reports_that_event`, `test_verify_intact_then_reports_tampered_event` (through the API), `test_deleted_row_breaks_the_next_link` |
+| `LOGIN_SUCCEEDED` events appear in S12 | PASS | As auditor, `/audit?action=LOGIN_SUCCEEDED` lists 15 rows (#1–#16 except #8, which is `LOGIN_FAILED`), with actor, IST time ("03 Oct 2026, 18:08"), `app_user` and the user id. **Verify chain** → "Chain intact (16 events)" ([list](docs/evidence/phase3/s12-login-succeeded.png), [intact](docs/evidence/phase3/s12-verify-intact.png)). Test: `test_login_succeeded_events_are_listed` |
+
+### Pending / known issues
+- **Q-03** (App Flow §2 vs §3.2 on `/registry` for INTEGRATOR): decide before Phase 6.
+- **To be aligned in `impdocs/`** (not edited): PRD §8 (DEC-14 endpoints), Backend Schema §9.2 (`PASSWORD_CHANGED`, DEC-15).
+- The stack's audit log now holds the gate's events (logins, two `AUDIT_VERIFIED`, one `LOGIN_FAILED`); the chain is intact. `make seed` still writes no audit rows (DEC-11).
+- The "Stay signed in" toast is in Phase 9 (DEC-17). Until then an expired token sends the user to `/login?next=`.
+- Every request does one primary-key lookup of the user (so disabling takes effect at once). This is fine at prototype scale.
+- The API still connects as the DB owner (DEC-12, Phase 8). That is why the tamper test can disable the trigger; `specid_app` cannot (Appendix B, already tested).
+- Sidebar badges (Review, Consents) arrive with S5/S18 in Phase 6. The run selector arrives with runs in Phase 5.
