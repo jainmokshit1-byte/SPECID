@@ -58,8 +58,8 @@ def test_cnmc_range() -> None:
 
 # ---- descriptions (PRD 9.9) ----
 def test_short_text_never_truncates() -> None:
-    long = spec("VALVE", {"valve_type": "BUTTERFLY", "size_dn": 600, "pressure_class": 2500,
-                          "body_material": "A351-CF8M", "end_connection": "FLANGED-RTJ"})  # fmt: skip
+    attrs = {"valve_type": "BUTTERFLY", "size_dn": 600, "pressure_class": 2500}
+    long = spec("VALVE", {**attrs, "body_material": "A351-CF8M", "end_connection": "FLANGED-RTJ"})
     assert short_desc(long) is None  # 44 characters: flagged for manual abbreviation
     assert short_desc(long, limit=50) == "VLV BUTTERFLY 24IN CL2500 A351-CF8M FLGD RTJ"
 
