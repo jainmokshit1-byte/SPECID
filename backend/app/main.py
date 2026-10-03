@@ -1,7 +1,7 @@
 """SpecID FastAPI application.
 
 Startup order (TRD 2.2): guard -> settings -> DB -> templates -> models -> registry index.
-Phase 2 adds migrations (TR-DAT-01); the other steps arrive in their phases.
+Phase 2 adds migrations (TR-DAT-01), Phase 4 the templates; the other steps arrive in their phases.
 """
 
 import logging
@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import audit, auth, errors, health, users
+from app.core.templates import load_templates
 from app.db.migrate import upgrade_head
 from app.settings import get_settings
 
@@ -46,6 +47,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
     upgrade_head(settings.database_url)  # TR-DAT-01: migrations before templates load
     structlog.get_logger().info("migrations_applied")
+    # TR-OPS-02, FR-401: an invalid template YAML aborts startup with file and line
+    app.state.templates = load_templates(settings.template_dir)
+    structlog.get_logger().info(
+        "templates_loaded", templates={t.id: t.version for t in app.state.templates.values()}
+    )
     yield
 
 

@@ -1,4 +1,7 @@
-"""Size, schedule, power and UoM canonicalisation (PRD 9.3, Appendix B; TRD TR-MOD-02, TR-ALG-06)."""
+"""Size, schedule, power and UoM canonicalisation.
+
+PRD 9.3 and Appendix B; TRD TR-MOD-02, TR-ALG-06.
+"""
 
 from typing import Final
 

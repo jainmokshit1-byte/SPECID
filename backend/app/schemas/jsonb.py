@@ -9,6 +9,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
 
+from app.core.templates import Template
+
 
 class Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -36,38 +38,8 @@ class RawRow(RootModel[dict[str, Any]]):
 
 
 # ----- template -----
-class TemplateDefinition(Strict):
-    """A category template YAML document (PRD Appendix A, TRD TR-MOD-05)."""
-
-    id: str
-    version: int = Field(ge=1)
-    category: str
-    critical_default: bool
-    core: list[str]
-    extended: list[str] = []
-    tolerant: list[str] = []
-    make: list[str] = []
-    value_domains: dict[str, list[str | int]] = {}
-    aliases: dict[str, dict[str, str]] = {}
-    rule_text: dict[str, str] = {}
-    rules: list[str] = []
-    implied: list[dict[str, Any]] = []
-    substitutes: list[dict[str, Any]] = []  # P1
-    class_path: list[str] | None = None
-    unspsc: str | None = None
-
-    @model_validator(mode="after")
-    def _keys_are_attributes(self) -> "TemplateDefinition":
-        attrs = set(self.core) | set(self.extended) | set(self.tolerant) | set(self.make)
-        for name, keys in (
-            ("rule_text", self.rule_text),
-            ("value_domains", self.value_domains),
-            ("aliases", self.aliases),
-        ):
-            unknown = set(keys) - attrs
-            if unknown:
-                raise ValueError(f"{name} keys are not attributes of the template: {unknown}")
-        return self
+# The template model lives in core/ (TRD TR-MOD-05); this contract reuses it (single definition).
+TemplateDefinition = Template
 
 
 # ----- dictionary (content per kind) -----
