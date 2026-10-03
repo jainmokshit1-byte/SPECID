@@ -199,7 +199,7 @@ P11                                                                       ██
 - [ ] R3 store `text_sim`, `lookalike`, baseline flags per pair (SF-1)
 - [ ] R1 **egress guard** in API and worker initializer; `/system/airgap`; footer counter (SF-7)
 - [ ] R6 UI: S2 upload & mapping, S3 quality report, S4 runs list / new run / run console
-- [ ] R5 UI: design-system components (VerdictBadge, EvidenceCard, RulePopover, DataTable, SyntheticRibbon, AirGapFooter) per UI/UX brief section 6
+- [ ] R5 UI: design-system components (VerdictBadge, EvidenceCard, RulePopover, DataTable, SyntheticBadge, AirGapStatus, NextStepCard, PageHeader, Tabs) per UI/UX brief section 6
 
 **Done when (Gate G2, T+14):** in the browser, upload three synthetic CPSE files → quality reports → start a CROSS_CPSE run → it reaches DONE with progress shown · `run.stats` shows all four channels used · the footer reads `AIR-GAPPED · blocked attempts: 0` · `make test-ml` passes on one laptop.
 
@@ -370,7 +370,7 @@ P11                                                                       ██
 | T+26 | G4 met? | P1 limited to SF-3 only |
 | T+30 | anything still unfinished? | it is not in the demo; never show a half-working screen (PRD 15.2) |
 
-**Never cut** (PRD 14.4): **multi-CPSE consent, rulebook impact preview, bounded false-merge number** (the differentiators), veto, unknown-state, rule-cited evidence, maker–checker, SYNTHETIC ribbon, safety scoreboard + honesty panel, baseline scoreboard, Look-alike Guard, air-gap proof, audit chain. Since v0.4 the PS key capabilities also stay: dashboard (tables if charts are late), migration pack, SAP-style export.
+**Never cut** (PRD 14.4): **multi-CPSE consent, rulebook impact preview, bounded false-merge number** (the differentiators), veto, unknown-state, rule-cited evidence, maker–checker, SYNTHETIC badge, safety scoreboard + honesty panel, baseline scoreboard, Look-alike Guard, air-gap proof, audit chain. Since v0.4 the PS key capabilities also stay: dashboard (tables if charts are late), migration pack, SAP-style export.
 
 ---
 

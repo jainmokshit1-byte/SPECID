@@ -4,7 +4,7 @@
 | Field | Value |
 |---|---|
 | Document | 04 of 6 · UI/UX Design Brief (how the app looks and feels) |
-| Version | v1.1 draft · 3 Oct 2026 (v1.1: consent strip, consent queue and impact-preview layouts; screenshot guidance for the new differentiators) |
+| Version | v1.2 draft · 3 Oct 2026. **v1.2: minimal and beginner-friendly** — simplicity rules (1.4), 5-item task navigation with tabs, Next-step card, compact SYNTHETIC badge, slim footer, progressive disclosure in the evidence card, simpler Home. Tokens and accessibility rules unchanged. v1.1: consent strip, impact preview |
 | Source of truth above this | PRD v0.5 (sections 1.8, 11.1–11.4, NFR-09) · TRD v1.1 (TR-UI-01–10) · 03 App Flow v1.1 (routes, modals, states) |
 | Applies to | Every screen S0–S19, every component, every exported image used on the slides |
 
@@ -23,6 +23,19 @@
 3. **Density with calm.** Many rows on screen, generous line height, few colours. Colour is reserved for meaning (verdicts, warnings).
 4. **Readable on a projector.** The finale demo runs on a projector or TV, often at **1366 × 768** or 1920 × 1080 with poor contrast. Design for that first.
 5. **Keyboard-friendly.** Reviewers process hundreds of clusters; every frequent action has a key.
+
+### 1.4 Simplicity rules (v1.2, apply to every screen)
+
+1. **One job per screen.** The title says it; one sentence under the title explains it in plain words.
+2. **One primary button per screen.** Everything else is secondary, or inside a "⋯" menu.
+3. **Show the next step, not everything.** Home shows a single Next-step card; lists show what needs action first.
+4. **Progressive disclosure.** Show the decisive information; put the rest behind "Show details", tabs, or a drawer. Advanced options are collapsed by default.
+5. **Plain words first, technical words second.** e.g. "National code (CNMC)", "Not the same item (veto)"; every technical term has a tooltip and a Help glossary entry.
+6. **No unbuilt features in navigation.** Placeholders never appear in menus.
+7. **At most two charts on any screen**, each with one takeaway sentence above it.
+8. **Quiet chrome.** Status (synthetic, air-gap) uses small badges, not full-width bars.
+9. **Generous space.** 16–24 px between groups, 40 px table rows by default; density toggle for power users.
+10. **A new user can finish the main task without help:** upload → run → review → code. Test this with someone who has not seen the app (section 11).
 
 ### 1.3 Reference apps (what to borrow, not copy)
 
@@ -76,7 +89,7 @@ All colours were checked for WCAG 2.1 contrast while writing this brief (text �
 | `--review` | `#4B5563` / `#EEF0F3` | `#A3ABB8` / `#222831` | REVIEW route, neutral tags | `UserCheck` | "Review" |
 | `--ai` | `#6D28D9` / `#F1EBFD` | `#C4B5FD` / `#251C3D` | values produced by ML (category by ML, dense channel) | `Bot` | "ML" |
 | `--user` | `#1D4ED8` outline | `#7AA2F7` outline | value supplied by a reviewer | `PenLine` | "Supplied by user" |
-| `--synthetic` | `#422006` / `#FDE68A` | same | SYNTHETIC ribbon (same in both modes) | `FlaskConical` | "SYNTHETIC DATA" |
+| `--synthetic` | `#422006` / `#FDE68A` | same | SYNTHETIC badge (same in both modes) | `FlaskConical` | "SYNTHETIC DATA" |
 | `--airgap` | `#E2E8F0` / `#0F172A` with dot `#22C55E` | same | footer | `ShieldCheck` | "AIR-GAPPED" |
 
 Contrast of each fg on its bg: eq 6.4:1, ne 5.8:1, ins 5.8:1, auto 5.8:1, review 6.6:1, ai 6.1:1 (light); 8.8, 6.3, 9.3, 6.4, 6.4, 8.7 (dark); ribbon 11.7:1; footer 14.5:1.
@@ -116,7 +129,7 @@ In stage mode every size scales by 115%.
 | Shadows | Only for floating layers: popover/menu `0 4px 12px rgb(0 0 0 / 0.08)`; modal `0 12px 32px rgb(0 0 0 / 0.16)`. Cards are flat with a border |
 | Focus | 2 px `--primary` outline, 2 px offset, on every interactive element; never removed |
 | Motion | 120–160 ms ease-out for popovers, drawers, row highlight. No decorative animation. `prefers-reduced-motion` disables all transitions except progress bars |
-| Z-order | sidebar 10 · top bar 20 · drawer 40 · modal 50 · toast 60 · ribbon 70 |
+| Z-order | sidebar 10 · top bar 20 · drawer 40 · modal 50 · toast 60 · top-bar badges 70 |
 
 ### 3.5 Iconography
 `lucide-react` (bundled, offline). 16 px in tables, 20 px in buttons and headers, stroke 1.75. Icons never appear without a text label or an `aria-label`.
@@ -128,10 +141,10 @@ In stage mode every size scales by 115%.
 | Item | Spec |
 |---|---|
 | Design target | **1366 × 768 first**, then 1920 × 1080. Everything on the demo path must fit 1366 × 768 at 100% without horizontal scroll |
-| Shell | Sidebar 232 px (collapsible to 56 px icons) · top bar 52 px · footer 28 px · SYNTHETIC ribbon 28 px |
+| Shell | Sidebar 220 px with **5 task items + Rules + Help** (collapsible to 56 px icons) · top bar 52 px holding the page title, the SYNTHETIC badge, the run selector (run-scoped pages only) and the user menu · **slim footer 24 px** with only the air-gap status · no full-width ribbon |
 | Content | Fluid width, 24 px padding; reading text max 72 characters wide; tables use full width |
 | Grid | 12 columns, 16 px gutter for dashboards; detail pages use a 2:1 split (main : side panel) at ≥ 1280 px |
-| Density | Table rows 36 px (comfortable) / 30 px (compact toggle); stage mode 40 px |
+| Density | Table rows **40 px default** (comfortable) / 32 px (compact toggle); stage mode 44 px |
 | Responsive | ≥ 1024 px full app. 768–1023 px: sidebar collapsed to icons, side panels move below. < 768 px (phones): **read-only** support for S9 search and S8 registry lookup only (tables become stacked cards); other screens show "Use a larger screen for review" |
 
 ---
@@ -159,7 +172,7 @@ In stage mode every size scales by 115%.
 |---|---|---|
 | **VerdictBadge** | icon + text in a 4-px-radius chip using the semantic fg/bg pair | sizes sm (table) and md (headers). Never colour-only |
 | **RouteTag** | outlined chip: "Auto-eligible" (`--auto`) or "Review" (`--review`) with reason tooltip | — |
-| **EvidenceCard** | table: `attribute · level (core/ext) · value A · value B · status · note` + rule icon | Row background tinted by status (MATCH none, CONFLICT `--ne` bg, PARTIAL/MISSING `--ins` bg). **Decisive attribute** row gets a 3-px left bar in `--ne` and bold values. Conversion notes as small mono chips under the value (`4 IN = DN100`). `MISSING_BOTH` rows collapsed into "+2 not stated on either side". Provenance badges (`ML`, `Supplied by user`) after values |
+| **EvidenceCard** | table: `attribute · level (core/ext) · value A · value B · status · note` + rule icon | Row background tinted by status (MATCH none, CONFLICT `--ne` bg, PARTIAL/MISSING `--ins` bg). **Decisive attribute** row gets a 3-px left bar in `--ne` and bold values. Conversion notes as small mono chips under the value (`4 IN = DN100`). `MISSING_BOTH` rows collapsed into "+2 not stated on either side". Provenance badges (`ML`, `Supplied by user`) after values **v1.2:** by default show only the rows that decide the outcome (conflicts, partial/missing core values, flags) plus a one-line summary "5 of 7 attributes match"; "Show all attributes" expands the rest |
 | **RulePopover** | rule ID (mono), rule text, template version, "Open in rulebook" link | opens on click and on focus+Enter; closes on Esc |
 | **ConversionChip** | mono 11 px chip, `--surface-2` bg | e.g. `WCB → A216-WCB`, `STD = SCH40 (DN150 ≤ 250)` |
 | **RecordColumn** | CPSE tag, legacy code (mono, copy), raw description (mono, wraps), UoM, make/MPN | Up to 4 columns side by side; more → horizontal scroll within the card only |
@@ -168,8 +181,8 @@ In stage mode every size scales by 115%.
 | **StatTile** | label (12 px muted), number (display), sublabel with base ("of 10,230 records") | optional sparkline; source tag "Run 4F2A · synthetic" |
 | **DataTable** | sticky header, sortable columns, numeric right-aligned, row hover `--surface-2`, virtualised > 200 rows | selection checkbox only where bulk actions exist |
 | **FilterBar** | chips for active filters, "Clear all" | reflects URL state |
-| **SyntheticRibbon** | full-width 28 px bar, `--synthetic`, flask icon, text "SYNTHETIC DATA: results are optimistic by construction" | not dismissible; present in screenshots |
-| **AirGapFooter** | shield icon, "AIR-GAPPED · blocked attempts: 0", version, commit, About | tags `GUARD OFF`, `DENSE OFF` in `--ins` when relevant |
+| **SyntheticBadge** | compact amber badge in the top bar: flask icon + "SYNTHETIC DATA" (`--synthetic`), tooltip "Results on synthetic data are optimistic by construction" | not dismissible; on every page with synthetic data; present in screenshots (replaces the v1.1 full-width ribbon) |
+| **AirGapStatus** | slim footer, right-aligned: green dot + "Air-gapped · 0 blocked" (micro text); version and commit moved to Help | grey "status unavailable" until the endpoint exists; amber `GUARD OFF` / `DENSE OFF` tags when relevant |
 | **StageStepper** | horizontal steps with counts and durations | current step animated progress bar only |
 | **HonestyPanel** | bordered card with `Info` icon, fixed copy from PRD 9.13.5 | always expanded on S11 |
 | **Toast** | bottom-right, 4 s, action link optional | errors stay until dismissed |
@@ -179,6 +192,10 @@ In stage mode every size scales by 115%.
 | **Buttons** | primary (filled `--primary`), secondary (outline), ghost (text), danger (filled `--danger`) · height 32 px (36 px stage mode) | disabled = 50% opacity + `not-allowed` cursor + tooltip explaining why |
 | **ConsentStrip** (SF-11) | one chip per participating CPSE: `CPSE-A ✔` (`--eq`), `CPSE-C … waiting` (`--review` with a clock icon), `CPSE-C ✖ declined` (`--ne`, reason in tooltip) | always in the S6 header for multi-CPSE clusters, in S18 rows and on the CNMC page history; never colour-only |
 | **ImpactPreviewTable** (SF-6) | transition matrix (from → to verdict with counts), affected CNMCs per CPSE, first 50 changes | zero-change result shown as a calm green "No stored decision changes"; non-zero transitions use the semantic colours of the *target* verdict |
+| **NextStepCard** | on Home: one sentence, one primary button, optional 5-step first-run checklist with the current step highlighted | content by role (App Flow 3.3); "All caught up" when nothing is pending |
+| **PageHeader** | title (h1), one-sentence purpose (muted), one primary button on the right, "⋯" menu for the rest | used on every page |
+| **Tabs** | underline tabs under the page header for sibling screens (e.g. Review: To review · Consents · Look-alikes); badge numbers only where action is needed | URL changes per tab so links and Back work |
+| **GlossaryTooltip** | dotted underline on technical words; tooltip with one plain sentence and "More in Help" | verdict names, CNMC, consent, veto, look-alike |
 | **Keyboard hints** | small `kbd` chips next to S6 action buttons: `A` `R` `S` `N` | hidden on touch devices |
 
 ---
@@ -187,21 +204,20 @@ In stage mode every size scales by 115%.
 
 The layouts below define placement; flows and actions are in 03 App Flow.
 
-### 7.1 S0 Dashboard
+### 7.1 S0 Home (v1.2)
 ```
-┌ Dashboard · Run 4F2A (3 CPSEs, synthetic) ──────────────────────────────────────────────┐
-│ [Records 10,230] [Duplicates within CPSEs 812 · 7.9%] [Cross-CPSE clusters 1,104]       │
-│ [Review backlog 37] [Data quality A 92 · B 78 · C 85]                (stat tiles, 5 cols)│
-├────────────────────────────────────────────┬────────────────────────────────────────────┤
-│ Duplicates by CPSE and category (bar)      │ Verdict mix (horizontal stacked bar,       │
-│                                            │ eq / ins / ne with labels)                 │
-├────────────────────────────────────────────┴────────────────────────────────────────────┤
-│ Top clusters by annual value (table, 10 rows)                                           │
-├─────────────────────────────────────────────────────────────────────────────────────────┤
-│ Demand across CPSEs (table: CNMC, description, CPSEs, combined qty, combined value)     │
-└─────────────────────────────────────────────────────────────────────────────────────────┘
+┌ Home · Run 4F2A ─────────────────────────────────────────────── [SYNTHETIC DATA] ┐
+│ ┌ Next step ───────────────────────────────────────────────────────────────────┐ │
+│ │ 12 clusters wait for your review.                       [ Start reviewing ]   │ │
+│ └──────────────────────────────────────────────────────────────────────────────┘ │
+│ [Records 3,0xx]   [Duplicates found 2xx · 8%]   [National codes issued 4x]       │  3 tiles only
+│                                                                                  │
+│ Duplicates by CPSE (one bar chart, one takeaway sentence above it)               │
+│                                                                                  │
+│ ▸ More: verdict mix · data quality · top clusters · demand across CPSEs          │  collapsed
+└──────────────────────────────────────────────────────────────────────────────────┘
 ```
-(Numbers in wireframes are placeholders, not results.)
+(Numbers are placeholders, not results.) Everything from the v1.1 dashboard is still there (PRD FR-1201, FR-1203), but behind "More" so a new user is not overwhelmed. On stage, open "More" when you reach the demand panel.
 
 ### 7.2 S5 Review queue
 Filter bar on top; table columns: priority bar (small horizontal bar), category, members, CPSE tags, verdict summary (badges), flags (⚠ count with tooltip), critical (shield icon + "Critical"), proposed CNMC text (mono, truncated with tooltip), state chip.
@@ -331,7 +347,7 @@ Component library: plain React components on Tailwind; accessible primitives (di
 | Slide | Screen | Capture rules |
 |---|---|---|
 | Slide 2 / 3 (differentiator visual) | **S6 header with the ConsentStrip** "A ✔ · B ✔ · C waiting", or the **S10 impact-preview** transition table | light mode, 1920 × 1080, zoom 125%, crop to the strip or table; label "planned screen" until real |
-| Slide 3 (prototype visual) | S13 Look-alike Guard, top 3 rows | light mode, stage mode off, 1920 × 1080, browser zoom 125%, crop to the table; SYNTHETIC ribbon visible |
+| Slide 3 (prototype visual) | S13 Look-alike Guard, top 3 rows | light mode, stage mode off, 1920 × 1080, browser zoom 125%, crop to the table; SYNTHETIC badge visible |
 | Slide 3 (alternative) | S6 cluster review | evidence card fully visible, decisive row in view |
 | Backup / Q&A | S11 scoreboard + honesty panel; S9 search result; footer with counter 0 | same settings |
 
@@ -343,8 +359,11 @@ Until the prototype runs, use a mock built from the S13 wireframe and label it "
 
 - [ ] Demo path fits 1366 × 768 without horizontal scroll
 - [ ] Every verdict shows icon + text
+- [ ] **New-user test:** someone who has never seen SpecID completes upload → run → review → issue a code without help, in under 5 minutes; note every place they hesitate and fix it
+- [ ] Every page has a one-sentence purpose and at most one primary button
+- [ ] No unbuilt screen appears in navigation
 - [ ] ConsentStrip and impact-preview table readable at 1366 × 768 in stage mode
-- [ ] SYNTHETIC ribbon on every data screen and in screenshots
+- [ ] SYNTHETIC badge on every data screen and in screenshots
 - [ ] Footer shows AIR-GAPPED and the counter
 - [ ] Fonts and icons load with the network off
 - [ ] Stage mode tested on the projector or a TV

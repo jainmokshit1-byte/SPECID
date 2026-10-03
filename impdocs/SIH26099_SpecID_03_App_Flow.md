@@ -4,7 +4,7 @@
 | Field | Value |
 |---|---|
 | Document | 03 of 6 · App Flow (every page, every click, every navigation path) |
-| Version | v1.1 draft · 3 Oct 2026 (v1.0 earlier the same day). v1.1: consent queue S18 and consent step in S6 (SF-11), rulebook impact preview in S10 is P0 (SF-6), change notices S19 (P1, SF-12), demo path updated |
+| Version | v1.2 draft · 3 Oct 2026. **v1.2: simpler navigation** — 5 task-based sidebar items with tabs instead of 7 groups and ~20 links, role-filtered, unbuilt screens hidden; everyone lands on Home with one "next step"; SYNTHETIC shown as a compact badge; slim footer. Routes and URLs are unchanged. v1.1: consent queue, impact preview P0, change notices |
 | Source of truth above this | PRD v0.5 (screens S0–S19, user stories US-01–US-32, demo 15.1) · TRD v1.1 (TR-UI-01 points to this route table, API catalogue) |
 | Next documents | 04 UI/UX Design Brief (how each screen looks) · 05 Backend Schema (where data lives) · 06 Implementation Plan (build order) |
 
@@ -14,7 +14,7 @@
 
 ## 1. Product shape in one paragraph
 
-SpecID is an **internal, role-based web app** with no public pages and no self sign-up. Users are created by an ADMIN (or seeded for the demo). After login, everyone lands on a page that fits their role. A persistent **left sidebar** groups the screens by job: *Overview · Data · Review · Registry · Insight · Governance · Integration*. A **top bar** carries the run selector and the user menu. Two pieces of chrome are always visible: the **SYNTHETIC ribbon** (when the current data is synthetic) and the **air-gap footer** (`AIR-GAPPED · blocked attempts: n`).
+SpecID is an **internal, role-based web app** with no public pages and no self sign-up. Users are created by an ADMIN (or seeded for the demo). After login, everyone lands on **Home**, where a single **Next-step card** says what to do. A quiet **left sidebar** has five task items — *Home · Data · Review · Registry · Results* — plus *Rules* and *Help*; related screens are tabs inside each item. Two small status elements are always visible: the **SYNTHETIC DATA badge** in the top bar (when the data is synthetic) and the **air-gap status** in a slim footer.
 
 ---
 
@@ -56,70 +56,65 @@ S16 (users), S17 (about), S18 (consents) and S19 (change notices) are listed in 
 
 ## 3. Navigation structure
 
-### 3.1 Layout
+### 3.1 Layout (v1.2: minimal)
+
 ```
-┌ SYNTHETIC DATA: results are optimistic by construction ─────────────────────────── (ribbon, only if synthetic) ┐
-├──────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ SpecID       │ Run: [ Run 4F2A · 3 CPSEs · DONE  ▾ ]                          [?]  Meera (MAKER) ▾            │ top bar
-│              ├─────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ OVERVIEW     │                                                                                                 │
-│  Dashboard   │                               page content                                                      │
-│ DATA         │                                                                                                 │
-│  Upload      │                                                                                                 │
-│  Runs        │                                                                                                 │
-│ REVIEW       │                                                                                                 │
-│  Queue  (37) │                                                                                                 │
-│ REGISTRY     │                                                                                                 │
-│  CNMCs       │                                                                                                 │
-│  Search      │                                                                                                 │
-│  Exports     │                                                                                                 │
-│ INSIGHT      │                                                                                                 │
-│  Look-alikes │                                                                                                 │
-│  Evaluation  │                                                                                                 │
-│ GOVERNANCE   │                                                                                                 │
-│  Consents (2)│                                                                                                 │
-│  Notices (P1)│                                                                                                 │
-│  Rulebook    │                                                                                                 │
-│  Audit       │                                                                                                 │
-│  Users       │                                                                                                 │
-│ INTEGRATION  │                                                                                                 │
-│  ERP sim (P1)│                                                                                                 │
-├──────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ AIR-GAPPED · blocked attempts: 0 · v0.4 · commit 1a2b3c · About                                    (footer)    │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌──────────────┬──────────────────────────────────────────────────────────────────────────┐
+│ ◆ SpecID     │ Review                         [SYNTHETIC DATA]   Run 4F2A ▾   Meera ▾   │ top bar
+│              ├──────────────────────────────────────────────────────────────────────────┤
+│ ⌂ Home       │ To review (12)   Consents (2)   Look-alikes            ← tabs of "Review" │
+│ ⇪ Data       │                                                                          │
+│ ✓ Review  12 │  Page title                                          [ One primary action ]│
+│ ▤ Registry   │  One sentence saying what this page is for.                              │
+│ ◔ Results    │                                                                          │
+│              │  content                                                                 │
+│              │                                                                          │
+│ ⚙ Rules      │                                                                          │
+│ ? Help       │                                              ● Air-gapped · 0 blocked    │ slim footer
+└──────────────┴──────────────────────────────────────────────────────────────────────────┘
 ```
+
+**Five task items, each a verb a new user understands, with tabs inside** (URLs unchanged):
+
+| Sidebar item | Question it answers | Tabs (screens) |
+|---|---|---|
+| **Home** | "What should I do next?" | S0 dashboard with the Next-step card |
+| **Data** | "How do I bring data in and match it?" | Upload (S2) · Matching runs (S4); S3 opens from an upload |
+| **Review** | "What needs my decision?" | To review (S5 → S6) · Consents (S18, checkers) · Look-alikes (S13) |
+| **Registry** | "What national codes exist?" | Codes (S8) · Search (S9) · Exports (S8c) |
+| **Results** | "How good is it, honestly?" | Evaluation (S11) |
+| **Rules** (bottom) | "Why was this decided?" | Rulebook (S10) · Audit (S12, ADMIN/AUDITOR) · Users (S16, ADMIN) |
+| **Help** (bottom) | "What do these words mean?" | S17 About: glossary of verdicts, honesty text, versions |
+
+P1 screens (S14, S15, S19) appear as tabs only once built. **A screen that is not built yet is never shown in navigation** (no "coming in Phase N" pages in the menu); its URL may still render a placeholder for developers.
 
 ### 3.2 Sidebar visibility by role
 
 | Item | MAKER | CHECKER | ADMIN | AUDITOR | INTEGRATOR |
 |---|---|---|---|---|---|
-| Dashboard | ✔ | ✔ | ✔ | ✔ | – |
-| Upload, Runs | ✔ | ✔ | ✔ | – | – |
-| Review queue | ✔ | ✔ | – | – | – |
-| CNMCs | ✔ | ✔ | ✔ | ✔ | – |
-| Search | ✔ | ✔ | ✔ | – | ✔ |
-| Exports | ✔ | ✔ | ✔ | – | – |
-| Look-alikes, Evaluation | ✔ | ✔ | ✔ | ✔ | – |
-| Rulebook | ✔ (read) | ✔ (read) | ✔ (edit) | ✔ (read) | – |
-| Audit | – | – | ✔ | ✔ | – |
-| Users | – | – | ✔ | – | – |
-| Consents (S18) | – | ✔ (own CPSE) | – | – | – |
-| Notices (S19, P1) | ✔ | ✔ | – | – | ✔ (read) |
-| ERP sim (P1) | ✔ | ✔ | ✔ | – | ✔ |
+| Home | ✔ | ✔ | ✔ | ✔ | – |
+| Data | ✔ | ✔ | ✔ | – | – |
+| Review | ✔ (To review, Look-alikes) | ✔ (all three tabs) | Look-alikes only | Look-alikes only | – |
+| Registry | ✔ | ✔ | ✔ | ✔ (Codes) | ✔ (Search, Codes) |
+| Results | ✔ | ✔ | ✔ | ✔ | – |
+| Rules | Rulebook (read) | Rulebook (read) | all tabs | Rulebook, Audit | – |
+| Help | ✔ | ✔ | ✔ | ✔ | ✔ |
 
-Hidden items are **not rendered**, and the server still returns 403 if their URL is opened directly (TRD TR-SEC-03).
+Each role sees **at most 7 items**; an INTEGRATOR sees two. Hidden items are not rendered, and the server still returns 403 if their URL is opened directly (TRD TR-SEC-03).
 
 ### 3.3 Global elements and their behaviour
 
 | Element | Behaviour |
 |---|---|
-| **Run selector** (top bar) | Lists the 20 most recent runs with status; default = latest `DONE` run. Changing it updates `?run=<id>` on run-scoped pages (S0, S5, S13) and keeps the selection in session storage. Disabled on pages that are not run-scoped |
-| **Review badge** (sidebar "Queue (n)") | Count of clusters waiting for *this user's* action (maker: `OPEN`; checker: `MADE` by someone else). Refreshes every 30 s |
-| **SYNTHETIC ribbon** | Shown whenever the page's data comes from a batch with `is_synthetic = true` (API field `is_synthetic`). Not dismissible |
-| **Air-gap footer** | Polls `/system/airgap` every 10 s. Shows `AIR-GAPPED · blocked attempts: n`. If the guard is disabled or the dense channel is off, the footer adds a visible tag (`GUARD OFF`, `DENSE OFF`) |
-| **Help `[?]`** | Opens the keyboard-shortcut overlay (P1) and a link to S17 About |
+| **Next-step card** (Home, top) | One sentence and one button for the user's most important pending action, by role: maker "12 clusters wait for your review → Start reviewing"; checker "2 national codes wait for CPSE-C's consent → Open consents"; admin first-run "1 Upload files · 2 Check quality · 3 Run matching · 4 Review · 5 Issue codes" with the current step highlighted; auditor "Verify the audit chain". Nothing pending → "All caught up" |
+| **Run selector** (top bar) | Only on run-scoped pages (Home, Review, Look-alikes); hidden elsewhere. Default = latest `DONE` run; writes `?run=<id>` |
+| **Badges** | Numbers only where action is needed: "Review 12" (items waiting for this user), "Consents 2". No other counters in the sidebar |
+| **SYNTHETIC badge** | Compact amber badge "SYNTHETIC DATA" in the top bar of every page that shows synthetic data; hover/tap shows "Results on synthetic data are optimistic by construction". Not dismissible; visible in screenshots (replaces the full-width ribbon, which used a whole line of screen) |
+| **Air-gap status** (slim footer, right) | "● Air-gapped · 0 blocked" (green dot); grey "Air-gap status unavailable" until `/system/airgap` exists; adds `GUARD OFF` / `DENSE OFF` in amber when relevant. Version and commit move to Help |
+| **Help** | S17: glossary (Identical, Equivalent, Not equivalent, Insufficient data, CNMC, consent), honesty text, versions; shortcut overlay (P1) |
 | **User menu** | Name, role, CPSE; "Change password"; "Logout" |
-| **Breadcrumbs** | On detail pages: `Review queue › Cluster 4F2A`, `Registry › NMC-00000001974`, `Runs › Run 4F2A` |
+| **Breadcrumbs** | On detail pages only: `Review › Cluster 4F2A`, `Registry › NMC-00000001974` |
+| **Page header** | Every page: title, one-sentence purpose, **at most one primary button**; other actions in a "⋯" menu |
 
 ### 3.4 Back behaviour
 Browser Back always works (no history replacement except after login and logout). Detail pages keep the list's filters in the URL, so Back returns to the same filtered list. After an action on S6 (approve, reject…), the app moves to the **next** cluster in the queue (section 5.6), not back to the list.
@@ -158,17 +153,14 @@ flowchart LR
 
 | Role | Home | Why |
 |---|---|---|
-| MAKER | `/review` if the queue has items, else `/` | Makers live in the queue |
-| CHECKER | `/consents` if consents are waiting for my CPSE, else `/review?stage=to_check` if items are waiting, else `/` | Stewards answer for their CPSE first |
-| ADMIN | `/` | Overview, then rulebook and users |
-| AUDITOR | `/audit` | Read-only trail |
+| MAKER, CHECKER, ADMIN, AUDITOR | `/` (Home) with the **Next-step card** pointing to their most important action | One predictable landing page; the card tells a new user exactly what to do |
 | INTEGRATOR | `/search` | The UI part of the API they integrate |
 
 ### 4.4 Redirect table
 
 | Event | Goes to |
 |---|---|
-| Login success | `next` (if allowed for the role) else role home |
+| Login success | `next` (if allowed for the role) else Home (`/`; INTEGRATOR `/search`) |
 | Logout | `/login` |
 | Any 401 from the API | `/login?next=<current URL>` |
 | Any 403 page load | stays on URL, shows the "No access" panel with a link to role home |

@@ -33,7 +33,7 @@ Precedence when documents disagree: Backend Schema (for the database) > TRD (for
 5. Database changes only through Alembic migrations that match Backend Schema Appendix A.
 6. Every state-changing action writes an audit event in the same transaction.
 7. Maker ≠ checker; a multi-CPSE cluster gets a CNMC only after every participating CPSE consents (PRD FR-1501).
-8. No real CPSE data in the repo, logs or fixtures. Synthetic data is always flagged and shown with the SYNTHETIC ribbon.
+8. No real CPSE data in the repo, logs or fixtures. Synthetic data is always flagged and shown with the SYNTHETIC DATA badge (UI/UX brief v1.2).
 9. Never hard-code result numbers in UI text or reports; numbers come from runs. Never write "first", "only", "best", "beats" in UI or docs (NFR-14).
 10. Secrets only in `.env` (never committed); `.env.example` has placeholders.
 
