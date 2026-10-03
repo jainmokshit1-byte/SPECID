@@ -13,7 +13,7 @@ import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import health
+from app.api import errors, health
 from app.db.migrate import upgrade_head
 from app.settings import get_settings
 
@@ -84,4 +84,5 @@ async def request_id(
         structlog.contextvars.clear_contextvars()
 
 
+errors.install(app)
 app.include_router(health.router, prefix=API_PREFIX)
