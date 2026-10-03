@@ -6,8 +6,8 @@ You are building **SpecID**, a governed national material registry for CPSEs: it
 
 | Read for | File |
 |---|---|
-| What to build, requirement IDs (FR-, NFR-, US-, SF-) | `impdocs/SIH26099_SpecID_Prototype_PRD.md` (v0.5) |
-| How to build: stack, modules, algorithms, compose, CI | `impdocs/SIH26099_SpecID_TRD.md` (v1.1) |
+| What to build, requirement IDs (FR-, NFR-, US-, SF-) | `impdocs/SIH26099_SpecID_Prototype_PRD.md` (v0.6) |
+| How to build: stack, modules, algorithms, compose, CI | `impdocs/SIH26099_SpecID_TRD.md` (v1.2) |
 | Every route, button, redirect, empty/error state | `impdocs/SIH26099_SpecID_03_App_Flow.md` |
 | Colours, fonts, components, layouts | `impdocs/SIH26099_SpecID_04_UI_UX_Design_Brief.md` |
 | Database: the ONLY DDL (Appendix A, schema v0.6) | `impdocs/SIH26099_SpecID_05_Backend_Schema.md` |
@@ -23,6 +23,7 @@ Precedence when documents disagree: Backend Schema (for the database) > TRD (for
 - After each task: run tests, then commit with the requirement ID first, e.g. `FR-602: veto on core conflict`.
 - At the end of a phase: update `PROGRESS.md` (phase, what is done, what is pending, known issues, gate result).
 - Never invent screens, tables, columns, endpoints or rules that are not in the docs. If something is missing, propose the doc change first.
+- Record every deviation or interpretation in `docs/DECISIONS.md` (next free DEC number). PRD Appendix C stays the verbatim oracle in `backend/tests/reference/`; `core/` may differ only through a named DEV entry in the conformance allowlist (PRD C.1).
 
 ## Hard rules (never break)
 

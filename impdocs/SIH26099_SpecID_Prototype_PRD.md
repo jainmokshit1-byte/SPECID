@@ -4,7 +4,7 @@
 | Field | Value |
 |---|---|
 | Document | Product Requirements Document for the **prototype** |
-| Version / status | **v0.5 draft** · 3 Oct 2026. **Re-positioned after measuring the public landscape:** 45 public SIH26099 repos found, 41 cloned and inspected (companion *Competitive Review*). Most v0.2 "signature features" already exist in strong public repos, so they are now **parity features**; three governance features not found in any inspected repo become the differentiators: **multi-CPSE consent (SF-11, P0)**, **rulebook impact preview (SF-6, now P0)**, **per-CPSE change notices (SF-12, P1)**, plus **bounded false-merge reporting (SF-5)**. Also fixes items found while writing docs 02–06: blocking key (FR-501), auth library (6.3), run statuses (FR-507), schema moved to doc 05 (v0.6), screens S16–S19. v0.4: aligned with the official PS. v0.3: consistency review. v0.2: landscape and signature features |
+| Version / status | **v0.6** · 3 Oct 2026. **v0.6 aligns the PRD with the build decisions DEC-01 to DEC-27 (Phases 1–4, see 17.3):** about 3,000 demo records (DEC-09), normaliser runs to a fixed point (9.2), IDENTICAL rule clarified (9.5), unresolvable values are unknown (9.5), long-description order (9.9), generator rules (10.1), five user endpoints (8), SYNTHETIC DATA badge and air-gap wording (11.2, FR-1463, FR-1491), template activation by one ADMIN (12), dense channel P0 (6.2/6.3), production deviations from Appendix C listed (C.1). v0.5: **Re-positioned after measuring the public landscape:** 45 public SIH26099 repos found, 41 cloned and inspected (companion *Competitive Review*). Most v0.2 "signature features" already exist in strong public repos, so they are now **parity features**; three governance features not found in any inspected repo become the differentiators: **multi-CPSE consent (SF-11, P0)**, **rulebook impact preview (SF-6, now P0)**, **per-CPSE change notices (SF-12, P1)**, plus **bounded false-merge reporting (SF-5)**. Also fixes items found while writing docs 02–06: blocking key (FR-501), auth library (6.3), run statuses (FR-507), schema moved to doc 05 (v0.6), screens S16–S19. v0.4: aligned with the official PS. v0.3: consistency review. v0.2: landscape and signature features |
 | Product | **SpecID** (working title) |
 | PS owner | Ministry of Petroleum & Natural Gas · Department: **Chennai Petroleum Corporation Limited (CPCL)** · Category Software · Theme Smart Automation · sectors named in the PS: Oil & Gas, Power, Steel, Mining, Heavy Engineering |
 | Companion files | `SIH26099_Research_Solution_PPT_Content.md` (research dossier and 6-slide idea PPT; references such as *A4.3* point into it) · `SIH26099_SpecID_TRD.md` (02, technical design) · `SIH26099_SpecID_03_App_Flow.md` · `SIH26099_SpecID_04_UI_UX_Design_Brief.md` · `SIH26099_SpecID_05_Backend_Schema.md` (authoritative DDL) · `SIH26099_SpecID_06_Implementation_Plan.md` · `SIH26099_SpecID_Competitive_Review.md` (measured comparison with 41 public repos) |
@@ -56,7 +56,7 @@ Each CPSE codes the same item differently. Text similarity cannot tell a CL150 v
 
 | ID | Criterion |
 |---|---|
-| SC-1 | The full flow completes on the bundled synthetic dataset (about 10k records, 3 CPSEs) in ≤ 10 minutes on an 8-core / 16 GB laptop |
+| SC-1 | The full flow completes on the bundled synthetic dataset (**about 3,000 records**, 3 CPSEs; DEC-09) in ≤ 10 minutes on an 8-core / 16 GB laptop with Docker at its default memory. The generator scales to about 10k records by parameter, but the demo and every reported number use the 3k set |
 | SC-2 | 100% of golden tests pass (target ≥ 60 pairs by T+30, covering every template) |
 | SC-3 | Property tests hold: no cluster contains an identity-critical conflict; verdicts are symmetric; a veto is never overridden |
 | SC-4 | The Evaluation page shows metrics from the seeded synthetic run with a SYNTHETIC badge, the false-merge count out of *n* hard negatives, and the rule-of-three upper bound |
@@ -233,7 +233,7 @@ Every *Expected Solution* bullet of the PS, the requirements that answer it, whe
 | Manage users | – | – | ✔ | – | – |
 | View Look-alike Guard, baselines, air-gap status | ✔ | ✔ | ✔ | ✔ | – |
 | Supply a missing attribute (P1) | ✔ | ✔ | – | – | – |
-| Preview a rulebook change (P1) | – | – | ✔ | – | – |
+| Preview a rulebook change (P0, SF-6) | – | – | ✔ | – | – |
 | Unmerge a record from a CNMC (P1) | – | ✔ | – | – | – |
 
 ---
@@ -366,7 +366,7 @@ Priorities: **P0** finale must · **P1** should · **P2** could. "AC" = acceptan
 
 | ID | Requirement | Pri | Acceptance criterion |
 |---|---|---|---|
-| FR-801 | Review queue with filters (category, CPSE, flags, verdict mix, critical) sorted by priority | P0 | Queue for a 10k-record run loads in ≤ 2 s |
+| FR-801 | Review queue with filters (category, CPSE, flags, verdict mix, critical) sorted by priority | P0 | Queue for the 3k-record demo run loads in ≤ 2 s |
 | FR-802 | Cluster view per wireframe S6 (side-by-side records, evidence card, proposed CNMC text) | P0 | Matches section 11 |
 | FR-803 | Maker–checker: MAKER proposes; CHECKER confirms or overturns; the same user cannot do both steps on a cluster (HTTP 403) | P0 | API test |
 | FR-804 | Keyboard shortcuts (A / R / S / N, J / K, ?) | P1 | Shortcut help overlay |
@@ -448,11 +448,11 @@ Priorities: **P0** finale must · **P1** should · **P2** could. "AC" = acceptan
 | FR-1452 | SF-6 | Activation requires: golden tests pass **and** the ADMIN acknowledges the impact summary; both are written to the audit log | P0 | Activation blocked otherwise |
 | FR-1461 | SF-7 | **Egress guard:** a socket-level guard in the API process blocks every connection except loopback and the configured database host, and counts blocked attempts | P0 | Unit test T-S5 |
 | FR-1462 | SF-7 | The Compose network of `api` and `db` is `internal: true` (no route to the internet); the demo includes `docker network inspect` showing it | P0 | Compose file reviewed; check in checklist 13.4 |
-| FR-1463 | SF-7 | `GET /system/airgap` returns mode, network setting and `blocked_egress_attempts`; the footer of every page shows "AIR-GAPPED · blocked attempts: n" | P0 | Footer visible; counter is 0 after the demo path |
+| FR-1463 | SF-7 | `GET /system/airgap` returns mode, network setting and `blocked_egress_attempts`; the footer of every page shows "Air-gapped · blocked attempts: n" (grey "Air-gap status unavailable" when the endpoint cannot be read) | P0 | Footer visible; counter is 0 after the demo path |
 | FR-1471 | SF-8 | S14 "Create material (mock ERP)": description field with live search-before-create (debounce 300 ms), 40-character counter, warning banner on `USE_EXISTING`, and a button that fills the SpecID 40-character description | P1 | Demo scene works |
 | FR-1481 | SF-9 | `POST /cnmc/{cnmc}/unmerge` marks the crosswalk row `REMOVED` with mandatory reason, removes the record from the CNMC, writes an audit event; the unique-active-mapping index frees the legacy code | P1 | Test: legacy code can be re-mapped after unmerge |
 | FR-1482 | SF-9 | CNMC history (S8) lists merges and unmerges with actor and reason | P1 | Visible |
-| FR-1491 | SF-10 | S15 lists CNMCs with crosswalk rows from ≥ 2 CPSEs, sorted by combined `annual_value`; CSV export; SYNTHETIC ribbon when applicable | P1 | Matches SQL aggregation |
+| FR-1491 | SF-10 | S15 lists CNMCs with crosswalk rows from ≥ 2 CPSEs, sorted by combined `annual_value`; CSV export; SYNTHETIC DATA badge when applicable | P1 | Matches SQL aggregation |
 | FR-1501 | SF-11 | A cluster whose members come from **more than one CPSE** reaches CNMC issuance only after a **consent** is recorded for every participating CPSE. The maker's proposal counts as consent for the maker's CPSE and the checker's confirmation for the checker's CPSE; every other participating CPSE needs a consent from one of its own CHECKER users | P0 | Unit test: 3-CPSE cluster with maker in A and checker in B stays `AWAITING_CONSENT` until a CPSE-C checker consents; issuance happens in that transaction |
 | FR-1502 | SF-11 | A steward may **decline** with a mandatory reason. The CNMC is then issued for the remaining CPSEs (if ≥ 2 records remain) and the declined CPSE's records stay unmapped; the decline is stored as a *dissent* and listed on the dashboard; the same pair is not re-proposed to that CPSE without a new rule version or a new attribute | P0 | Test: decline by CPSE-C → CNMC maps only A and B records; dissent row exists; audit event written |
 | FR-1503 | SF-11 | **Consent queue** (S18) for each steward: clusters waiting for their CPSE, with the evidence card, the records of their CPSE highlighted, and Consent / Decline actions | P0 | Demo scene works with three browser profiles |
@@ -467,7 +467,7 @@ Priorities: **P0** finale must · **P1** should · **P2** could. "AC" = acceptan
 
 | ID | Area | Requirement | Target | How verified |
 |---|---|---|---|---|
-| NFR-01 | Performance | Harmonise about 10k records (3 CPSEs) end to end | ≤ 10 min on 8-core / 16 GB CPU **[T]** | Timed run in CI-like environment |
+| NFR-01 | Performance | Harmonise about 3,000 records (3 CPSEs) end to end (DEC-09) | ≤ 10 min on 8-core / 16 GB CPU, Docker default memory (`api` 4 GB, `db` 1 GB limits) **[T]** | Timed run in CI-like environment |
 | NFR-01b | Performance | Search-before-create latency | p95 ≤ 1 s with about 5k CNMCs **[T]** | Load script |
 | NFR-01c | Performance | List views | ≤ 200 ms server time for 100 rows **[T]** | API timing logs |
 | NFR-02 | Determinism | Same seed and config give identical outputs (excluding timestamps and UUIDs) | exact | Hash comparison |
@@ -519,7 +519,7 @@ Priorities: **P0** finale must · **P1** should · **P2** could. "AC" = acceptan
 | Full design | MVP choice | Why |
 |---|---|---|
 | Celery / Prefect workers | FastAPI background task + `ProcessPoolExecutor` | One less service to break at 3 a.m. |
-| pgvector / OpenSearch | FAISS in memory (P1) and `rank_bm25`; vectors stored as `real[]` | No extension setup; enough for about 10k–50k records |
+| pgvector / OpenSearch | FAISS in memory (**P0** dense channel, 1.6) and `rank_bm25`; vectors stored as `real[]` | No extension setup; enough for about 10k–50k records |
 | Keycloak SSO | Local users + JWT + bcrypt | Offline demo |
 | Kubernetes | Docker Compose (api, web, db; optional ollama) | Single-laptop demo |
 | LightGBM + calibration | **P0 rule-based decision** + heuristic confidence; LightGBM in P1 | The rules already carry the safety logic; ML only improves ranking and thresholds |
@@ -531,7 +531,7 @@ Priorities: **P0** finale must · **P1** should · **P2** could. "AC" = acceptan
 |---|---|
 | Backend | Python 3.11, FastAPI, Pydantic v2, SQLAlchemy 2.0 + Alembic, uvicorn |
 | Database | PostgreSQL 16 (Docker) using the schema in Appendix E |
-| NLP and matching | rapidfuzz, rank_bm25; sentence-transformers `all-MiniLM-L6-v2` and `faiss-cpu` (P1; **pre-download the model**, see R-01); spaCy (P2) |
+| NLP and matching | rapidfuzz, rank_bm25; sentence-transformers `all-MiniLM-L6-v2` and `faiss-cpu` (**P0**; **pre-download the model**, see R-01; embedding batch size 64, DEC-09); spaCy (P2) |
 | ML (P1) | LightGBM, scikit-learn (`IsotonicRegression`) |
 | Optional LLM (P2) | Any local instruct model served by Ollama (e.g. an 8B-class model); JSON-schema constrained output |
 | Frontend | React 18, TypeScript, Vite, Tailwind, TanStack Query, React Router, Recharts |
@@ -642,6 +642,10 @@ The authoritative DDL is in **doc 05 Backend Schema, Appendix A (schema v0.6: 26
 | API-36 | `GET /cnmc/{cnmc}/substitutes` (P1) | MAKER+ | FR-612 |
 | API-37 | `GET /consents?cpse=` · `POST /clusters/{id}/consent` `{decision: CONSENT\|DECLINE, reason}` | CHECKER of a participating CPSE | SF-11: consent queue and action |
 | API-38 | `GET /change-notices?cpse=` · `POST /change-notices/{id}/ack` · `GET /change-notices/{id}/delta.csv` (P1) | MAKER+, INTEGRATOR (read) | SF-12 |
+| API-39 | `GET /users` (also returns `cpses` for the Add-user modal) · `POST /users` | ADMIN | S16: list and create users; MAKER and CHECKER need a CPSE (DEC-14) |
+| API-40 | `POST /users/{id}/reset-password` | ADMIN | Sets `must_change_password`; audit `PASSWORD_RESET` |
+| API-41 | `POST /users/{id}/disable` | ADMIN | Not one's own account; audit `USER_DISABLED` |
+| API-42 | `POST /me/password` | any signed-in user | Self-service and forced change; audit `PASSWORD_CHANGED` (DEC-15) |
 
 **Example: evidence card (`GET /pairs/{id}`)**. Generated by the reference code in Appendix C.
 
@@ -1049,10 +1053,14 @@ The authoritative DDL is in **doc 05 Backend Schema, Appendix A (schema v0.6: 26
 
 The expansion list is a **versioned dictionary** (FR-203); the code in Appendix C is the v1 seed.
 
+**Fixed point (DEC-24).** One pass of rules 1–10 is not idempotent on every input (`1/2 #` → `1/CL2` → `1 CL2`; `GR.ADE B` → `GRADE B` → `GRB`). Production `normalise` therefore **repeats rules 1–10, in this order, until the output stops changing (max 8 passes)**; if the cap is ever reached it returns the last result and logs a warning with the input's SHA-256, never the text. This is what makes FR-201 / T-P4 (`normalise(normalise(x)) == normalise(x)`) hold. Measured on the 3k seed: at most 2 passes.
+
+**Face phrases (dictionary v2, Phase 5).** Style B text (10.1) writes `RAISED FACE`, `FLAT FACE`, `RING TYPE JOINT`, which the v1 rules do not read, so those pairs abstain. Dictionary v2 adds the whole-phrase expansions `RAISED FACE`→`RF`, `FLAT FACE`→`FF`, `RING TYPE JOINT`→`RTJ` (applied before rule 9). Because Appendix C stays the v1 oracle, this is logged as an allowlisted deviation that applies only to texts containing one of these phrases.
+
 ### 9.3 Size and unit canonicalisation
 - Sizes map to **DN** through table B.1. Anything not in the table (for example `7 IN`) becomes *unknown* and is never guessed.
 - A bare `100 MM` is **not** accepted as a size (it could be outside diameter or DN); it stays as a technical residual token, so the pair becomes `INSUFFICIENT_DATA`.
-- `STD` → `40` only for DN ≤ 250; `XS` → `80` only for DN ≤ 200 (B.2). **SME must verify these limits.**
+- `STD` → `40` only for DN ≤ 250; `XS` → `80` only for DN ≤ 200 (B.2). **SME must verify these limits.** `STD` / `XS` with no known size, or outside these limits, cannot be resolved and is **unknown** (see 9.5, *unresolvable values*), never compared as a raw word.
 - `HP` → kW at 0.7457; kW values compare within 1%; rpm within 5%.
 
 ### 9.4 Templates and extraction
@@ -1094,7 +1102,9 @@ Machine-readable definitions: Appendix A. Policy: *core* attributes must be know
 | All core `MATCH`, class is critical | `EQUIVALENT` or `IDENTICAL` | `REVIEW` (maker–checker) |
 | All core `MATCH`, no flags, class non-critical | `EQUIVALENT` or `IDENTICAL` | `AUTO_ELIGIBLE` |
 
-`IDENTICAL` applies when MPN and manufacturer are both present and equal (case-insensitive); otherwise `EQUIVALENT`.
+`IDENTICAL` applies when MPN and manufacturer are **both present on both sides** and equal, compared case-insensitively after trimming spaces; otherwise `EQUIVALENT` on the same route with the same reasons (DEC-26). The check runs only after the veto and the unknown-state have passed, so an equal MPN never skips the veto, and failing the check never makes a pair `NOT_EQUIVALENT`.
+
+**Unresolvable values are unknown, not conflicts.** A veto needs two *known, canonical* values. A value the extractor cannot map to the attribute's canonical domain — `STD` / `XS` without a known size, a misspelled closed-domain word such as `INDUCTINO`, a size not in table B.1 — is recorded as unknown (`MISSING_ONE` / `MISSING_BOTH`, with a note such as `STD needs a size`), so the pair goes to `INSUFFICIENT_DATA` → `REVIEW`, never to `NOT_EQUIVALENT`. Found on the 3k seed in Phase 4 (4 true matches vetoed, safe direction); fixed in Phase 5 as an allowlisted deviation from Appendix C.
 
 ```
  categories differ? ──yes──► NOT_EQUIVALENT
@@ -1143,7 +1153,19 @@ Machine-readable definitions: Appendix A. Policy: *core* attributes must be know
 | MOTOR | `MOTOR AC IND 100KW 4P` | 21 |
 | GASKET | `GASKET SPW 4IN CL150 SS316 GRAPH` | 32 |
 
-- **Long description:** full words in a fixed order per category, for example `GATE VALVE, 4 IN (DN100), CLASS 150, ASTM A216 WCB, FLANGED RAISED FACE`. Built from the canonical spec; no free text is generated.
+- **Long description:** full words, comma-separated, in a fixed order per category (DEC-25); missing attributes are left out, nothing is generated.
+
+| Category | Order |
+|---|---|
+| VALVE | `<type> VALVE`, size `4 IN (DN100)`, `CLASS n`, `ASTM <body>`, end (`FLANGED RAISED FACE` …), design standard, trim |
+| PIPE | process, size, `SCH n`, material, end finish |
+| FLANGE | `<type> FLANGE`, size, class, face, material |
+| FASTENER | `<head> <type>`, `M16 X 80 MM`, `GRADE g`, coating |
+| MOTOR | `AC INDUCTION MOTOR`, `n KW`, `n POLE`, `n RPM`, `n V`, IP, mounting |
+| GASKET | `SPIRAL WOUND GASKET`, size, class, winding material, `<filler> FILLER` |
+
+  Example: `GATE VALVE, 4 IN (DN100), CLASS 150, ASTM A216 WCB, FLANGED RAISED FACE`.
+- **Short description with a missing value:** the part is left out (never `None`, `CLNone` or `?IN`); if nothing is left, the function returns *none* (DEC-21, DEV-1).
 
 ### 9.10 Evidence card
 Fields: `verdict`, `route`, `reasons[]`, and `evidence[]` with `attr`, `level` (core / ext), `a`, `b`, `status`, **`rule`** (ID such as `VALVE.size_dn`), **`rule_text`**, and **`note_a` / `note_b`** (conversions and inferences such as `4 IN = DN100`, `WCB -> A216-WCB`, `supplied by user: datasheet D-123`). The UI renders one row per attribute with icon + colour + text, a popover for the rule, and collapses `MISSING_BOTH` rows. See the example in section 8.
@@ -1206,12 +1228,12 @@ Reference: `decide(..., templates=)`, `impact_preview`.
 | Parameter | Default | Meaning |
 |---|---|---|
 | `seed` | 7 | Random seed; same seed + config → identical files |
-| `n_entities` | 4,000 | Distinct base specifications; hard-negative neighbours add about 30% more, giving about 10k records |
+| `n_entities` | **1,200** | Distinct base specifications; with hard-negative neighbours and duplicates this gives **about 3,000 records** (seed 7: 3,023 records from 1,499 entities). DEC-09; 4,000 gives about 10k if memory allows |
 | `category_mix` | valve 25%, pipe 25%, flange 20%, fastener 20%, motor 10% | P0 categories |
 | `cpses` | 3 styles: A, B, C | One style profile per CPSE |
 | `presence` | in 1 / 2 / 3 CPSEs with 0.4 / 0.4 / 0.2 | Where each entity appears |
 | `within_dup_rate` | 0.10 | Extra duplicate record inside the same CPSE |
-| `hard_negative_share` | 0.30 | Share of entities that get a "neighbour" differing in exactly one identity-critical attribute |
+| `hard_negative_share` | 0.30 (evaluation preset **0.5**, DEC-09) | Share of entities that get a "neighbour" differing in exactly one core attribute (never the category word) |
 | `drop_ext_rate` | 0.30 | Chance an extended attribute is not written |
 | `drop_core_rate` | 0.05 | Chance a core attribute is not written (creates justified `INSUFFICIENT_DATA`) |
 | `typo_rate` | 0.02 per token | Character typo |
@@ -1236,7 +1258,9 @@ Reference: `decide(..., templates=)`, `impact_preview`.
 | FASTENER | type {BOLT, STUD, NUT}; thread {M12–M30}; length 20–200 mm; strength {8.8, 10.9, B7, 2H}; coating {ZINC, HDG, none} |
 | MOTOR | power {kW list}; poles {2, 4, 6, 8}; rpm consistent with poles at 50 Hz; voltage {415, 690 V} |
 
-**Outputs per run:** `cpse_A.csv`, `cpse_B.csv`, `cpse_C.csv` (columns: `legacy_code, short_text, long_text, uom, mat_group, manufacturer, mpn, plant, criticality, annual_value`) · `truth_entities.csv` (record → entity, category, canonical attributes, `dropped_core`) · `truth_pairs.csv` (pair → `EQUIVALENT` or `NOT_EQUIVALENT_HARD`) · `manifest.json` (seed, config, SHA-256 of every file).
+**Generator consistency rules (DEC-27).** Truth values are always canonical: pipe schedules are stored canonical for their size (`STD` = SCH40 up to DN250, `XS` = SCH80 up to DN200), so a neighbour never "differs" only in how the same schedule is written; A106-B pipe is always seamless; bolts 8.8/10.9, studs B7, nuts 2H; motors are AC induction with rpm matching poles at 50 Hz. Style A cuts at 40 characters and records any core attribute it cut in `dropped_core`. Typos swap two adjacent letters in alphabetic words of 4+ letters, never digits. Makers are `SYNTH-MAKER-nn`, MPNs `SX-…`. Tests: truth schedules canonical for their size; no hard-negative pair with complete text is ever merged.
+
+**Outputs per run:** `cpse_A.csv`, `cpse_B.csv`, `cpse_C.csv` (columns: `legacy_code, short_text, long_text, uom, mat_group, manufacturer, mpn, plant, criticality, annual_value`) · `truth_entities.csv` (record → entity, category, canonical attributes, `dropped_core`, `neighbour_of`, `split`) · `truth_pairs.csv` (pair → `EQUIVALENT` or `NOT_EQUIVALENT_HARD`) · `manifest.json` (seed, config, SHA-256 of every file; no timestamp, so the same seed gives byte-identical files). Files go to `data/synthetic/seed-<n>/`.
 
 **Splits:** by entity: train 60% / validation 20% / test 20%. Rules and thresholds may be tuned **only** on train and validation. The test split is evaluated once before the final report. For P1 ML training, hold out whole attribute combinations (for example `BLIND` flanges and 8-pole motors) in the test split only.
 
@@ -1290,7 +1314,7 @@ Purpose: show, on the **same data**, what a simple text-based approach does next
 
 | ID | Target |
 |---|---|
-| E-1 | Zero false merges among ≥ 1,000 hard negatives (upper bound ≈ 0.3%). If not reached: list every failure, fix rules, re-run on validation, then re-test once |
+| E-1 | Zero false merges among the hard negatives of the seeded run (with ≥ 1,000 the upper bound is ≈ 0.3%; on the 3k set the report states the real *n* and its rule-of-three bound, DEC-09). If not reached: list every failure, fix rules, re-run on validation, then re-test once |
 | E-2 | Pair completeness ≥ 0.98 |
 | E-3 | Auto-eligible precision, Wilson lower bound ≥ 0.99 (only if auto-eligibility is switched on; needs about 380 error-free auto-eligible pairs) |
 | E-4 | Core-attribute extraction F1 ≥ 0.90 per category on development styles |
@@ -1330,11 +1354,12 @@ Each run exports JSON and Markdown containing: SYNTHETIC label · seed and confi
 | S17 | About & honesty | Evidence ladder, honesty text, versions, licences | all | 1442 |
 | S18 | **Consent queue** | Clusters waiting for my CPSE's consent; evidence; Consent / Decline | CHECKER of the CPSE | 1501–1504 |
 | S19 | Change notices, P1 | Per-CPSE inbox; acknowledge; delta migration file | MAKER+, INTEGRATOR | 1511–1513 |
-| Footer | Air-gap indicator (all pages) | "AIR-GAPPED · blocked attempts: n" from `/system/airgap` | all | 1463 |
+| Footer | Air-gap indicator (all pages) | "Air-gapped · blocked attempts: n" from `/system/airgap`, plus "Consent: all CPSEs" | all | 1463, 1504 |
 
 ### 11.2 Visual language
 - **Verdicts** use colour **and** icon **and** text: `EQUIVALENT` / `IDENTICAL` green ✔ · `NOT_EQUIVALENT` red ✖ · `INSUFFICIENT_DATA` amber ? · flags ⚠ outline · `AUTO_ELIGIBLE` blue "auto" tag · `REVIEW` grey tag.
-- A **persistent ribbon** at the top of every page that shows synthetic data: "SYNTHETIC DATA: results are optimistic by construction".
+- A **SYNTHETIC DATA badge** in the top bar of every page that shows data (not dismissible; its tooltip says "results are optimistic by construction"). Login shows no data and has no badge (DEC-10).
+- Footer: "Air-gapped · blocked attempts: n" with a green dot, and a muted "Consent: all CPSEs".
 - Dense, table-first layout; monospace for descriptions so characters (`l`, `1`, `I`, `0`, `O`) are distinguishable.
 
 ### 11.3 Wireframes (text)
@@ -1410,7 +1435,7 @@ LOOK-ALIKE GUARD   run 4F2A   [SYNTHETIC]    look-alike ≥ 0.85 · hidden twin 
 │ 0.73  BOLT HEX M16X80 GR8.8 ZN            BOLT, HEX HD, M16 X 80…   ✔ EQUIVALENT    │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 Chart: x = text similarity 0–1 · y = verdict band ✔ / ? / ✖ · click a dot → evidence card
-Footer: AIR-GAPPED · blocked attempts: 0
+Footer: Air-gapped · blocked attempts: 0
 ```
 
 ### 11.4 Interaction rules
@@ -1429,7 +1454,7 @@ Footer: AIR-GAPPED · blocked attempts: 0
 | Audit chain | `hash = SHA-256(prev_hash ‖ canonical_json(event))`, canonical JSON = sorted keys, no whitespace. `GET /audit/verify` recomputes from the first event; any edit or deletion breaks the chain at that row |
 | Data classification | CPSE data is confidential. The demo uses synthetic data only; real data never enters the repo, logs or screenshots |
 | Network | No outbound calls at runtime (FR-1303); models and the optional LLM are local. **Egress guard** in the API process (loopback and database only, blocked attempts counted) plus an `internal: true` Compose network (FR-1461–1463) |
-| Template governance (P1) | Propose (DRAFT) → golden tests must pass → a different ADMIN activates → versions are immutable; runs record the version used |
+| Template governance | Propose (DRAFT) → impact preview (SF-6, P0) → golden tests must pass → the ADMIN acknowledges the impact preview and activates; both steps audited → versions are immutable; runs record the version used. No second ADMIN is required (DEC-04); a four-eyes activation is a production option (TRD §19) |
 | Secrets | Environment variables; `.env.example` lists demo users and passwords **for local use only** |
 | Logging | Structured JSON; no passwords or tokens; descriptions are logged only in debug mode |
 
@@ -1479,7 +1504,7 @@ Seed set: the 12 near-miss / equivalent pairs of dossier A4.3 plus 13 edge cases
 - [ ] Seed script loads users, templates, synthetic data and a pre-run snapshot
 - [ ] All golden and property tests pass on the demo commit
 - [ ] The demo path in section 15 runs three times offline
-- [ ] SYNTHETIC ribbon visible on every data screen
+- [ ] SYNTHETIC DATA badge visible on every data screen
 - [ ] Air-gap: `docker network inspect` shows `"Internal": true`; the demo path works with Wi-Fi off; the footer counter reads 0
 - [ ] Look-alike Guard lists ≥ 20 items for the bundled seed; the baseline scoreboard shows B1, B2 and SpecID with the honesty panel
 - [ ] A 3-CPSE cluster shows "waiting for CPSE-C consent" and issues the CNMC only after the CPSE-C steward consents
@@ -1523,7 +1548,7 @@ Rule: **vertical slices.** Each person delivers working end-to-end increments be
 |---|---|---|---|
 | T+0 – 2 | Kickoff: repo, compose, CI, seed users; answer Q-01 and Q-02; lock scope | all | `docker compose up` shows login; CI green |
 | T+2 – 8 | Core v0: normaliser **with conversion notes**, extractors (valve, pipe, flange), template loader with **rule texts**, `decide`; generator v0; DB + ingest API; UI skeleton + S2 | R2, R3, R4, R1, R5, R6 | **G1 (T+8):** a CLI run on generator output prints the verdict mix; 25 golden tests pass; evidence rows carry rule IDs (SF-4) |
-| T+8 – 14 | Blocking + BM25 + **dense channel**, **ML category fallback**, **UoM table**, procurement-history ingest, clustering, persistence, run API; **store `text_sim` and the `lookalike` class (SF-1)**; S3, S4; fastener and motor extractors; **egress guard + internal Compose network (SF-7)** | R3, R1, R6, R2 | **G2 (T+14):** end-to-end run from the UI on synthetic data; footer shows AIR-GAPPED with counter 0 |
+| T+8 – 14 | Blocking + BM25 + **dense channel**, **ML category fallback**, **UoM table**, procurement-history ingest, clustering, persistence, run API; **store `text_sim` and the `lookalike` class (SF-1)**; S3, S4; fastener and motor extractors; **egress guard + internal Compose network (SF-7)** | R3, R1, R6, R2 | **G2 (T+14):** end-to-end run from the UI on synthetic data; footer shows "Air-gapped · blocked attempts: 0" |
 | T+14 – 20 | Review queue (S5), cluster view (S6) with rule popovers, maker–checker, CNMC issuance, crosswalk, exports, audit chain; **Look-alike Guard S13 (SF-1)**, **multi-CPSE consent (SF-11) + S18 consent queue** | R5, R1, R3, R6 | **G3 (T+20):** approve a cluster → CNMC → crosswalk export; audit verify passes; S13 lists look-alikes |
 | T+20 – 26 | Search-before-create (API + S9), evaluation runner + S11, **baselines B1 / B2 + scoreboard (SF-2) + honesty panel (SF-5)**, **S0 dashboard** (duplicate, quality and demand panels), S8, **migration pack + SAP-style export + SAP import preset**; golden tests ≥ 40; **rulebook impact preview + YAML draft + golden gate (SF-6)** | R3, R4, R5, R6 | **G4 (T+26):** S11 shows a seeded SYNTHETIC run: false merges *k* of *n* with bound, B1 / B2 / SpecID side by side |
 | T+26 – 30 | Hardening: property tests T-S1…T-S6, style D + adversarial set, residual-guard tuning; **P1 signature features in this order: SF-3 ask-don't-guess, SF-12 change notices, SF-8 ERP simulator, SF-9, SF-10**; gasket (P1); LightGBM only if all gates are met | R2, R3, R4, R5, R6 | **G5 (T+30): FEATURE FREEZE**; ≥ 60 golden tests; all P0 signature features demonstrable |
@@ -1537,7 +1562,7 @@ Rule: **vertical slices.** Each person delivers working end-to-end increments be
 
 **Minimum viable demo path** (switch to it if G3 slips past T+22): pre-loaded synthetic snapshot → S13 Look-alike Guard → S6 cluster with rule popovers → approve (maker, then checker) → S8 CNMC + crosswalk → S9 search-before-create → S11 scoreboard + honesty panel → footer air-gap. Everything else is optional.
 
-**Never cut:** **multi-CPSE consent (SF-11)**, **rulebook impact preview (SF-6)**, veto, unknown-state, evidence card **with rule citations (SF-4)**, maker–checker, SYNTHETIC ribbon, evaluation page with the **safety scoreboard and honesty panel (SF-5)**, **baseline scoreboard (SF-2)**, **Look-alike Guard (SF-1)**, **air-gap proof (SF-7)**, audit chain. These are the story of "why SpecID looks different".
+**Never cut:** **multi-CPSE consent (SF-11)**, **rulebook impact preview (SF-6)**, veto, unknown-state, evidence card **with rule citations (SF-4)**, maker–checker, SYNTHETIC DATA badge, evaluation page with the **safety scoreboard and honesty panel (SF-5)**, **baseline scoreboard (SF-2)**, **Look-alike Guard (SF-1)**, **air-gap proof (SF-7)**, audit chain. These are the story of "why SpecID looks different".
 
 ### 14.5 Repository layout
 ```
@@ -1563,22 +1588,25 @@ specid/
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `DATABASE_URL` | `postgresql://specid:specid@db:5432/specid` | Database |
+| `DATABASE_URL` | `postgresql+psycopg://specid:${DB_PASSWORD}@db:5432/specid` | Database (psycopg 3 driver; password from `.env`) |
+| `DB_PASSWORD` | *(set locally)* | Database password |
 | `JWT_SECRET` | *(set locally)* | Token signing |
 | `JWT_EXPIRE_MIN` | `480` | 8 h expiry |
 | `OFFLINE` | `true` | Block outbound calls |
-| `EMBEDDINGS_ENABLED` | `false` | Dense channel (P1) |
+| `EMBEDDINGS_ENABLED` | `true` | Dense channel (P0) |
+| `CONSENT_MODE` | `ALL_PARTICIPANTS` | Consent rule (FR-1504; `NONE` only for tests); shown in the footer |
+| `GIT_COMMIT` | from `git rev-parse --short HEAD` (`make up`) | Shown by `/health` and in reports |
 | `MODEL_DIR` | `./models` | Pre-downloaded embedding model |
 | `LLM_ENABLED` | `false` | Local LLM (P2) |
 | `SEED_DEMO_USERS` | `true` | Create demo users (local only) |
 
-`make up` · `make down` · `make seed` · `make demo-data SEED=7` · `make test` · `make eval SEED=7` · `make lint` · `make snapshot`
+`make up` · `make down` · `make seed` · `make demo-data` (`SEED=7` default; writes `data/synthetic/seed-7`) · `python -m app.cli decide --file data/synthetic/seed-7` · `make test` · `make eval SEED=7` · `make lint` · `make snapshot`
 
 ### 14.7 Git and CI
 Trunk-based development, short-lived branches, commit messages prefixed with the requirement ID (for example `FR-602: veto on core conflict`). CI on every push: ruff, black --check, pytest (unit, golden, property, API), coverage report. After T+24, merge on green CI without waiting for review. Tag every gate (`gate-1` … `gate-6`).
 
 ### 14.8 Definition of done (per story)
-Code + tests (unit and, where relevant, golden or property) · RBAC enforced · audit event written in the same transaction · SYNTHETIC ribbon present where data appears · no TODO on a P0 path · requirement ID in the commit · demo path still passes.
+Code + tests (unit and, where relevant, golden or property) · RBAC enforced · audit event written in the same transaction · SYNTHETIC DATA badge present where data appears · no TODO on a P0 path · requirement ID in the commit · demo path still passes.
 
 ---
 
@@ -1635,7 +1663,7 @@ Answer with what can be **shown**: (1) **every participating CPSE consents** bef
 | R-08 | Docker problems on a team laptop | M / M | Test on two OSes in the first 2 hours; DB snapshot and run script as fallback | R1 |
 | R-09 | Template rules wrong (STD/XS limits, material families) | M / H | SME review (D-06); rules live in YAML, not code; golden tests per rule | R2 |
 | R-10 | Scope creep into LLM or embeddings | H / M | P2 items off by default; cut order | R1 |
-| R-11 | 10k records slower than NFR-01 | M / M | Memoise `decide`; tighter blocking; demo with 1–3k records if needed | R3 |
+| R-11 | Run slower than NFR-01 or out of memory | M / M | **Applied (DEC-09):** demo uses about 3k records, `mem_limit` api 4 GB / db 1 GB, embedding batch 64, one worker; memoise `decide`; tighter blocking | R3 |
 | R-12 | UI takes longer than planned | M / M | Build S6 and S9 first; other screens are plain tables | R5 |
 | R-13 | Real CPSE data arrives late or in an odd format | M / L | Mapping wizard + quality report; demo stays on synthetic data | R6 |
 | R-14 | Judges call the baselines a straw man | M / M | Fair design (normalised text, B2 numeric guard, τ tuned separately on validation, both always shown); say plainly that stronger learned matchers exist and are not compared | R4 |
@@ -1644,7 +1672,7 @@ Answer with what can be **shown**: (1) **every participating CPSE consents** bef
 | R-18 | P0 is too large for 36 h (core pipeline, ≈ 30 h of P0 features, RBAC, audit) | H / H | SF-11 and SF-6 reuse existing parts (review state machine; `decide(..., templates=draft)`); apply the P0 simplification list; if G3 slips past T+22 switch to the minimum viable demo path (14.4) — consent and impact preview stay in it | R1 |
 | R-19 | Judges ask "where is the AI?" because the decision is rule-based | M / H | Show the split plainly: AI for classification (FR-402), semantic search (FR-503), extraction long tail and ranking (P1/P2); rules only where a wrong merge is a safety risk. Say "AI proposes, engineering rules and people decide" | R6 |
 | R-20 | Public SIH26099 repos are more mature than our build (several ≥ 20k lines with tests and measured results) | H / M | Do not compete on breadth; win on the governance differentiators and on rigour; never claim parity features as unique; re-run the scan before the finale | R1, R6 |
-| R-17 | Signature features push the build beyond 36 hours | H / H | P0 signature features cost about 19 h in total and are scheduled before T+26; P1 ones follow the cut order; feature freeze at T+30 | R1 |
+| R-17 | Signature features push the build beyond 36 hours | H / H | P0 signature features cost about 30 h in total (1.8) and are scheduled before T+26; P1 ones follow the cut order; feature freeze at T+30 | R1 |
 
 ---
 
@@ -1667,6 +1695,25 @@ Answer with what can be **shown**: (1) **every participating CPSE consents** bef
 | D-11 | Uniqueness is worded as a *differentiated combination*, never "first" or "best" | Honesty; judges may know other work |
 | D-12 | Positioning: "governed national registry" — governance across CPSEs is the differentiator; matching safety is parity | 41-repo scan, 3 Oct 2026 |
 | D-13 | Consent rule `ALL_PARTICIPANTS`: maker's and checker's CPSEs count as consented; others need their own CHECKER | Minimal extra steps for 2-CPSE clusters; real consent for ≥ 3 |
+| D-14 | Appendix C stays the verbatim oracle; production `core/` may differ only through an allowlist of named deviations, each with a test that fails on any other difference (C.1) | Keeps specification-by-example honest while fixing defects |
+| D-15 | An unresolvable value is unknown, never a conflict (9.5) | A veto must rest on two known values |
+| D-16 | Demo and reported numbers use about 3,000 synthetic records (DEC-09) | Fits Docker's default memory on the team's laptops |
+
+### 17.3 Build decisions folded into v0.6
+
+The build keeps `docs/DECISIONS.md` (DEC-01 …). v0.6 of this PRD absorbs these:
+
+| DEC | Where in this PRD |
+|---|---|
+| DEC-01, 02, 03 | 14.6 (`CONSENT_MODE`, `GIT_COMMIT`, `DATABASE_URL`, `EMBEDDINGS_ENABLED=true`) |
+| DEC-04 | 12 (one ADMIN activates after impact preview + golden tests) |
+| DEC-06a/b/c | 6.2, 6.3 (dense P0), §2 matrix (impact preview P0), R-17 (≈ 30 h) |
+| DEC-09 | SC-1, NFR-01, 10.1 (`n_entities` 1,200), E-1, 6.3 (batch 64) |
+| DEC-10 | 11.2, 11.1 footer, 13.4, 14.4, 14.8, FR-1463, FR-1491 (badge, air-gap wording) |
+| DEC-14, 15 | 8 (API-39 … API-42) |
+| DEC-21, 24, 26 | 9.2, 9.5, 9.9, C.1 |
+| DEC-25, 27 | 9.9 (long description), 10.1 (generator rules, files) |
+| Phase 4 findings | 9.2 face phrases, 9.3 / 9.5 unresolvable values (Phase 5) |
 
 ### 17.2 Open questions
 
@@ -2178,6 +2225,19 @@ class EgressGuard:
     def uninstall(self):
         socket.socket.connect, socket.socket.connect_ex, socket.getaddrinfo = self._orig
 ```
+
+### C.1 Production deviations from this reference (allowlist)
+
+The code block above is copied byte-for-byte to `backend/tests/reference/specid_ref.py` and must not be edited. `tests/reference/test_conformance.py` compares production `core/` with it and fails on any difference except these, each scoped by a predicate and proven by a planted-difference test:
+
+| DEV | Production behaviour | Applies only when |
+|---|---|---|
+| DEV-1 | `short_desc` leaves out missing parts (no `None`, `CLNone`, `?IN`, no crash on a missing `motor_type`); empty → none | The reference raises or prints a missing value |
+| DEV-2 | The NUT rule drops `length_mm` when **either** side is a nut (symmetric evidence) | Side B is the nut and side A is not; verdict and route stay equal |
+| DEV-3 | Unicode NFKC and removal of non-printing characters first (TRD TR-MOD-01) | The input has a non-ASCII or non-printing character |
+| DEV-4 | Rules repeat until the output stops changing, max 8 passes (9.2) | The reference itself is not idempotent on the input; then `core/` equals the reference on the reference's fixed point |
+| DEV-5 | `IDENTICAL` needs MPN and manufacturer present on both sides, case-insensitive (9.5) | A manufacturer is missing, or MPN / manufacturer differ only in case or spaces |
+| *planned (Phase 5)* | Face phrases (`RAISED FACE` → `RF` …), unresolvable values are unknown (9.5) | Logged as new DEV entries when built |
 
 ## Appendix D: Tests for the reference implementation
 

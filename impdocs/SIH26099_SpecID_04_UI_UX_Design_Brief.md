@@ -4,8 +4,8 @@
 | Field | Value |
 |---|---|
 | Document | 04 of 6 · UI/UX Design Brief (how the app looks and feels) |
-| Version | v1.2 draft · 3 Oct 2026. **v1.2: minimal and beginner-friendly** — simplicity rules (1.4), 5-item task navigation with tabs, Next-step card, compact SYNTHETIC badge, slim footer, progressive disclosure in the evidence card, simpler Home. Tokens and accessibility rules unchanged. v1.1: consent strip, impact preview |
-| Source of truth above this | PRD v0.5 (sections 1.8, 11.1–11.4, NFR-09) · TRD v1.1 (TR-UI-01–10) · 03 App Flow v1.1 (routes, modals, states) |
+| Version | **v1.3** · 3 Oct 2026. v1.3 aligns with build decisions DEC-10/16: footer also shows "Consent: all CPSEs" (left, muted), air-gap wording "Air-gapped · blocked attempts: n", component names `SyntheticBadge` / `AirGapStatus` as in TRD v1.2. v1.2: **v1.2: minimal and beginner-friendly** — simplicity rules (1.4), 5-item task navigation with tabs, Next-step card, compact SYNTHETIC badge, slim footer, progressive disclosure in the evidence card, simpler Home. Tokens and accessibility rules unchanged. v1.1: consent strip, impact preview |
+| Source of truth above this | PRD v0.6 (sections 1.8, 11.1–11.4, NFR-09) · TRD v1.2 (TR-UI-01–10) · 03 App Flow v1.3 (routes, modals, states) |
 | Applies to | Every screen S0–S19, every component, every exported image used on the slides |
 
 **How an AI coding agent should use this file.** Use only the tokens in section 3 (no raw hex in components). Build every screen from the components in section 6. Every verdict is shown with **colour + icon + text**. If a design question is not answered here, choose the plainer option and add the answer to this file.
@@ -90,9 +90,9 @@ All colours were checked for WCAG 2.1 contrast while writing this brief (text �
 | `--ai` | `#6D28D9` / `#F1EBFD` | `#C4B5FD` / `#251C3D` | values produced by ML (category by ML, dense channel) | `Bot` | "ML" |
 | `--user` | `#1D4ED8` outline | `#7AA2F7` outline | value supplied by a reviewer | `PenLine` | "Supplied by user" |
 | `--synthetic` | `#422006` / `#FDE68A` | same | SYNTHETIC badge (same in both modes) | `FlaskConical` | "SYNTHETIC DATA" |
-| `--airgap` | `#E2E8F0` / `#0F172A` with dot `#22C55E` | same | footer | `ShieldCheck` | "AIR-GAPPED" |
+| `--airgap` | `#E2E8F0` / `#0F172A` with dot `#22C55E` | same | footer | `ShieldCheck` | "Air-gapped" |
 
-Contrast of each fg on its bg: eq 6.4:1, ne 5.8:1, ins 5.8:1, auto 5.8:1, review 6.6:1, ai 6.1:1 (light); 8.8, 6.3, 9.3, 6.4, 6.4, 8.7 (dark); ribbon 11.7:1; footer 14.5:1.
+Contrast of each fg on its bg: eq 6.4:1, ne 5.8:1, ins 5.8:1, auto 5.8:1, review 6.6:1, ai 6.1:1 (light); 8.8, 6.3, 9.3, 6.4, 6.4, 8.7 (dark); SYNTHETIC badge 11.7:1; footer 14.5:1.
 
 **Rule:** red, green and amber appear **only** for verdict and status meaning. Charts use the same semantic colours for verdicts and neutral greys otherwise; no rainbow palettes.
 
@@ -141,7 +141,7 @@ In stage mode every size scales by 115%.
 | Item | Spec |
 |---|---|
 | Design target | **1366 × 768 first**, then 1920 × 1080. Everything on the demo path must fit 1366 × 768 at 100% without horizontal scroll |
-| Shell | Sidebar 220 px with **5 task items + Rules + Help** (collapsible to 56 px icons) · top bar 52 px holding the page title, the SYNTHETIC badge, the run selector (run-scoped pages only) and the user menu · **slim footer 24 px** with only the air-gap status · no full-width ribbon |
+| Shell | Sidebar 220 px with **5 task items + Rules + Help** (collapsible to 56 px icons) · top bar 52 px holding the page title, the SYNTHETIC badge, the run selector (run-scoped pages only) and the user menu · **slim footer 24 px** with the consent mode (left, muted) and the air-gap status (right) · no full-width ribbon |
 | Content | Fluid width, 24 px padding; reading text max 72 characters wide; tables use full width |
 | Grid | 12 columns, 16 px gutter for dashboards; detail pages use a 2:1 split (main : side panel) at ≥ 1280 px |
 | Density | Table rows **40 px default** (comfortable) / 32 px (compact toggle); stage mode 44 px |
@@ -182,7 +182,7 @@ In stage mode every size scales by 115%.
 | **DataTable** | sticky header, sortable columns, numeric right-aligned, row hover `--surface-2`, virtualised > 200 rows | selection checkbox only where bulk actions exist |
 | **FilterBar** | chips for active filters, "Clear all" | reflects URL state |
 | **SyntheticBadge** | compact amber badge in the top bar: flask icon + "SYNTHETIC DATA" (`--synthetic`), tooltip "Results on synthetic data are optimistic by construction" | not dismissible; on every page with synthetic data; present in screenshots (replaces the v1.1 full-width ribbon) |
-| **AirGapStatus** | slim footer, right-aligned: green dot + "Air-gapped · 0 blocked" (micro text); version and commit moved to Help | grey "status unavailable" until the endpoint exists; amber `GUARD OFF` / `DENSE OFF` tags when relevant |
+| **AirGapStatus** | slim footer, right-aligned: green dot + "Air-gapped · blocked attempts: n" (micro text); the footer's left side shows a muted "Consent: all CPSEs" (FR-1504, DEC-10); version and commit moved to Help | grey "status unavailable" until the endpoint exists; amber `GUARD OFF` / `DENSE OFF` tags when relevant |
 | **StageStepper** | horizontal steps with counts and durations | current step animated progress bar only |
 | **HonestyPanel** | bordered card with `Info` icon, fixed copy from PRD 9.13.5 | always expanded on S11 |
 | **Toast** | bottom-right, 4 s, action link optional | errors stay until dismissed |
@@ -364,7 +364,7 @@ Until the prototype runs, use a mock built from the S13 wireframe and label it "
 - [ ] No unbuilt screen appears in navigation
 - [ ] ConsentStrip and impact-preview table readable at 1366 × 768 in stage mode
 - [ ] SYNTHETIC badge on every data screen and in screenshots
-- [ ] Footer shows AIR-GAPPED and the counter
+- [ ] Footer shows "Air-gapped · blocked attempts: 0" and "Consent: all CPSEs"
 - [ ] Fonts and icons load with the network off
 - [ ] Stage mode tested on the projector or a TV
 - [ ] No banned words (section 5)

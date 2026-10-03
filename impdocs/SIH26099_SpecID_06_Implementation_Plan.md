@@ -4,8 +4,8 @@
 | Field | Value |
 |---|---|
 | Document | 06 of 6 · Implementation Plan (the exact order to build) |
-| Version | v1.1 draft · 3 Oct 2026 (v1.1: multi-CPSE consent and rulebook impact preview built as P0 differentiators; change notices P1; competitive re-scan before the finale; upstream PRD fixes applied) |
-| Source of truth above this | PRD v0.5 (scope tiers 1.6, differentiators 1.8, plan 14.3, cut order 14.4, demo 15) · TRD v1.1 · 03 App Flow v1.1 · 04 UI/UX Design Brief v1.1 · 05 Backend Schema (schema v0.6) · Competitive Review |
+| Version | **v1.2** · 3 Oct 2026 (v1.2: aligned with build decisions DEC-01 … DEC-27 after Phases 1–4 — Phase 4 builds all six extractors with a verbatim reference and allowlist, Phase 4 findings scheduled in Phase 5, S17 in Phase 7, `specid_app` connection in Phase 8, "Stay signed in" in Phase 9, INTEGRATOR registry roles in Phase 6, 3k demo set from the start; v1.1: multi-CPSE consent and rulebook impact preview built as P0 differentiators; change notices P1; competitive re-scan before the finale; upstream PRD fixes applied) |
+| Source of truth above this | PRD v0.6 (scope tiers 1.6, differentiators 1.8, plan 14.3, cut order 14.4, demo 15) · TRD v1.2 · 03 App Flow v1.3 · 04 UI/UX Design Brief v1.3 · 05 Backend Schema (schema v0.6) · Competitive Review |
 | Team | 6 people, roles R1–R6 (PRD 14.1) |
 | Assumption to confirm | 36-hour software finale (PRD Q-02); whether code written before the finale is allowed (PRD Q-01) |
 
@@ -60,7 +60,7 @@ P11                                                                       ██
 |---|---|---|---|---|---|
 | 0 | Preparation (stages A–B) | before T+0 | all | — | submitted PPT; ready laptops |
 | 1 | Setup | T+0 – 2 | R1 | 0 | stack boots to login page; CI green |
-| 2 | Database | T+0.5 – 3 | R1 | 1 | schema v0.5 migrated; seed loads |
+| 2 | Database | T+0.5 – 3 | R1 | 1 | schema v0.6 migrated; seed loads |
 | 3 | Auth, RBAC and audit | T+2 – 6 | R1 | 2 | login per role; audit chain verify |
 | 4 | Core engine | T+2 – 8 | R2, R3, R4 | 1 | **G1** |
 | 5 | Data, runs, AI channels, air-gap | T+8 – 14 | R3, R1, R2, R4, R6 | 2, 3, 4 | **G2** |
@@ -114,7 +114,7 @@ P11                                                                       ██
 - [ ] `docker-compose.yml`, nginx config, both Dockerfiles exactly as TRD Appendix A; `internal: true` on `backend`
 - [ ] `.env.example` (TRD Appendix C); each person copies it to `.env`
 - [ ] Backend skeleton: FastAPI app with `/api/v1/health`, settings model (TRD Appendix D), structlog
-- [ ] Frontend skeleton: Vite + React + TS + Tailwind with the tokens file from the UI/UX brief section 9; app shell (sidebar, top bar, footer, ribbon) with placeholder pages for every route in App Flow section 2
+- [ ] Frontend skeleton: Vite + React + TS + Tailwind with the tokens file from the UI/UX brief section 9; app shell (sidebar, top bar with SYNTHETIC DATA badge, footer) with placeholder pages for every route in App Flow section 2
 - [ ] Freeze dependencies: `requirements.lock`, `requirements-ml.lock` (CPU torch), `package-lock.json` (TRD TR-OPS-03)
 - [ ] CI workflow (TRD Appendix G); Makefile targets as stubs (TRD Appendix B)
 - [ ] Each laptop: `make up` succeeds (test on at least two operating systems; PRD R-08)
@@ -168,16 +168,21 @@ P11                                                                       ██
 
 **Tasks**
 - [ ] R2 `core/normalise.py` with the versioned dictionary; `core/units.py` (NPS→DN, STD/XS rules, HP→kW, UoM aliases)
-- [ ] R2 `core/extract.py` for VALVE, PIPE, FLANGE (then FASTENER, MOTOR in Phase 5) with conversion notes on every attribute
+- [ ] R2 `core/extract.py` for **all six categories** (VALVE, PIPE, FLANGE, FASTENER, MOTOR, GASKET; gasket stays DRAFT in the DB) with conversion notes on every attribute, because the 25 golden cases include fastener, motor and gasket pairs (DEC-20)
 - [ ] R2 `core/templates.py` loading YAML incl. `rule_text`; startup fails on invalid YAML
 - [ ] R3 `core/types.py`, `core/decide.py` (veto → unknown-state → route), `core/confidence.py`, `core/cluster.py`, `core/cnmc.py`, `core/shortdesc.py`
 - [ ] R3 `core/radar.py` (`text_sim`, `lookalike_class`) and `core/baselines.py`
 - [ ] R4 `eval/generator.py` v0: seeded, styles A–C, hard negatives, truth files, manifest with hashes (PRD 10.1)
 - [ ] R2+R3+R4 golden YAML: the 12 dossier pairs + 13 edge cases from PRD Appendix D = 25 cases
 - [ ] R3 architecture test: `core/` imports nothing from services, API or DB (TRD TR-TST-12)
+- [ ] **First commit of the phase: the golden, property and Appendix D tests, red**, before any `core/` code; `git diff <that commit> -- tests/golden` must stay empty (TRD TD-12)
+- [ ] PRD Appendix C copied verbatim to `tests/reference/specid_ref.py` (byte-identical test) + `test_conformance.py`: `core/` equals the reference except the allowlist DEV-1 … DEV-5 (PRD C.1, TRD TD-11)
+- [ ] Generator with `n_entities = 1,200` (about 3k records, DEC-09); `make demo-data`; same seed → identical SHA-256
 - [ ] CLI `python -m app.cli decide --file data/synthetic/seed-7` prints the verdict mix
 
-**Done when (Gate G1, T+8):** 25 golden tests pass · symmetry and veto property tests pass · every evidence row has `rule` and `rule_text` · the CLI prints a verdict mix on generator output · `pytest -m "not ml"` green in CI.
+**Done when (Gate G1, T+8):** 25 golden tests pass (also against the reference) · golden diff empty · conformance tests pass · symmetry and veto property tests pass · every evidence row has `rule` and `rule_text` · the CLI prints a verdict mix on generator output · `pytest -m "not ml"` green in CI · tag `gate-1`.
+
+**Status (build, 3 Oct 2026):** G1 passed — 512 backend tests, `core/` coverage 98%, 0 of 1,217 hard negatives merged on seed-7, 0 evidence rows without a rule.
 
 **Agent prompt for this phase:** *"Using PRD sections 9.2–9.10 and TRD section 4 as the source of truth, implement `core/decide.py` with the exact signature in TRD 4.2 (TR-MOD-06). Make the golden tests in `tests/golden/*.yaml` pass. Do not add any ML or scoring that can change a verdict."*
 
@@ -192,7 +197,9 @@ P11                                                                       ██
 **Tasks**
 - [ ] R1 ingest service: upload (CSV/XLSX, encoding detection), mapping suggestions incl. **SAP preset** (TRD Appendix H), idempotent ingest, quality report
 - [ ] R4 procurement-history upload and aggregation (FR-107), vendor hashing; generator adds synthetic procurement lines
-- [ ] R2 FASTENER and MOTOR extractors; **UoM harmonisation** in ingest (FR-205)
+- [ ] R2 **harden** the FASTENER and MOTOR extractors (built in Phase 4); **UoM harmonisation** in ingest (FR-205)
+- [ ] R2 **Phase 4 findings first** (each a new DEC + DEV entry with a scoped predicate): (a) unresolvable values are unknown, never a conflict (`STD` without size, `INDUCTINO`; PRD 9.5); (b) dictionary v2 face phrases `RAISED FACE`/`FLAT FACE`/`RING TYPE JOINT` (PRD 9.2). Re-run `python -m app.cli decide --file data/synthetic/seed-7`: 0 true matches vetoed, abstentions down, hard negatives merged still 0
+- [ ] R1 `settings.RunDefaults` (DEC-13 item 4); Appendix D §8 egress-guard tests (T-S5) with `security/egress.py`
 - [ ] R4 + R3 `make models`: train the **ML category classifier** on the train split (TRD 4.3); add the fallback to `classify()`
 - [ ] R3 candidate generation: blocking `(category, size_dn)`, BM25, **MiniLM + FAISS**, MPN; mode filters; channel bitmask (TRD TR-ALG-01)
 - [ ] R3 harmonise orchestration in the job pool: extract → embed → candidates → decide → COPY pairs → cluster → stats; progress every ≤ 2 s; cancel
@@ -201,9 +208,9 @@ P11                                                                       ██
 - [ ] R6 UI: S2 upload & mapping, S3 quality report, S4 runs list / new run / run console
 - [ ] R5 UI: design-system components (VerdictBadge, EvidenceCard, RulePopover, DataTable, SyntheticBadge, AirGapStatus, NextStepCard, PageHeader, Tabs) per UI/UX brief section 6
 
-**Done when (Gate G2, T+14):** in the browser, upload three synthetic CPSE files → quality reports → start a CROSS_CPSE run → it reaches DONE with progress shown · `run.stats` shows all four channels used · the footer reads `AIR-GAPPED · blocked attempts: 0` · `make test-ml` passes on one laptop.
+**Done when (Gate G2, T+14):** in the browser, upload three synthetic CPSE files → quality reports → start a CROSS_CPSE run → it reaches DONE with progress shown · `run.stats` shows all four channels used · the footer reads `Air-gapped · blocked attempts: 0` · `make test-ml` passes on one laptop.
 
-**Decision point (T+14):** if the run takes more than 10 minutes on 10k records, switch the demo dataset to 3k records now (PRD R-11) and keep going.
+**Decision point (T+14):** the demo dataset is already about 3k records (DEC-09). If a run still takes more than 10 minutes, lower `n_entities` further or switch the dense channel off (blocking + BM25 remain) and keep going.
 
 ---
 
@@ -224,6 +231,7 @@ P11                                                                       ██
 - [ ] R1 **multi-CPSE consent** (differentiator, P0): `services/consent.py`, `review_consent` writes, `AWAITING_CONSENT` state, issuance on the last consent, decline with reason (TRD 2.3 b2, TR-ALG-11; PRD FR-1501–1504)
 - [ ] R6 **S18 consent queue** and the **ConsentStrip** in S6 (UI/UX brief 6, 7.5b); seed user `kavya` (CHECKER, CPSE-C)
 - [ ] R3 test T-S7 (TRD TR-TST-15)
+- [ ] R6 INTEGRATOR gets **read-only** `/registry` and `/registry/:cnmc` (route roles in `routes.ts`, `nav.test.ts`, `test_rbac.py`; App Flow §2, DEC-19)
 
 **Done when (Gate G3, T+20):** maker proposes and checker confirms a 3-CPSE cluster → it waits for CPSE-C → the CPSE-C steward consents → CNMC issued → crosswalk export and migration pack download · the same user cannot confirm their own proposal (UI hides it, API returns 403) · `/audit/verify` passes · S13 lists look-alikes with decisive attributes.
 
@@ -246,6 +254,7 @@ P11                                                                       ██
 - [ ] R2 golden tests ≥ 40
 - [ ] R2 + R3 **rulebook impact preview** (differentiator, P0): YAML draft validation, `decide(..., templates=draft)` over stored pairs, affected CNMCs per CPSE, golden-test gate, acknowledged activation (TRD TR-ALG-10; PRD FR-403–404, FR-1451–1452)
 - [ ] R5 S10 draft editor + **ImpactPreviewTable** (UI/UX brief 7.5c); test T-S8 (TRD TR-TST-16)
+- [ ] R5 **S17 About & honesty** next to the S11 honesty panel, both reading one shared honesty text (FR-1442, DEC-07); GlossaryTooltip
 
 **Done when (Gate G4, T+26):** the demo draft rule shows non-zero transitions and affected CNMCs, and activation is blocked until golden tests pass · S11 shows a seed-7 SYNTHETIC run with false merges *k* of *n* and the bound, B1 / B2 / SpecID side by side, honesty panel visible · S9 returns USE_EXISTING for a known valve · S0 shows all panels for the run · a SAP-style extract ingests with no manual mapping.
 
@@ -259,9 +268,10 @@ P11                                                                       ██
 - [ ] R2, R3 property tests T-P1…T-P6 and T-S1…T-S6 green; golden tests ≥ 60, every template covered (PRD 13.2)
 - [ ] R4 style-D holdout written blind by someone who has not read the extractors; adversarial set; results shown separately
 - [ ] R2 residual-token guard tuned on validation only
+- [ ] R1 API connects as `specid_app` with RLS (Backend Schema Appendix B; owner URL for migrations, app URL for requests; DEC-12)
 
 **Then P1, in this order (stop at T+30 wherever you are):**
-1. [ ] SF-3 ask-don't-guess: supply-attribute API + S6 drawer (strongest demo moment)
+1. [ ] SF-3 ask-don't-guess: supply-attribute API + S6 drawer (strongest demo moment); the service returns 422 for a source note under 5 characters (the DB CHECK is the backstop; TRD TD-13)
 2. [ ] SF-12 per-CPSE change notices + S19 inbox + delta CSV (TRD TR-MOD-33)
 3. [ ] SF-8 ERP create-material simulator (S14)
 4. [ ] SF-9 unmerge with reason (S8b)
@@ -284,6 +294,7 @@ P11                                                                       ██
 - [ ] Charts with table fallbacks on S0, S11, S13
 - [ ] Banned-words search over `frontend/src` (TRD TR-TST-13)
 - [ ] Fonts and icons load with the network off
+- [ ] "Stay signed in" toast 10 minutes before token expiry (App Flow 4.2, DEC-17)
 
 **Done when:** the design checklist in UI/UX brief section 11 is fully ticked.
 
@@ -329,7 +340,7 @@ P11                                                                       ██
 | T+4–6 | auth, RBAC, audit | valve/pipe/flange | cluster, cnmc, shortdesc | golden cases | EvidenceCard, Verdict | S12, S16 |
 | T+6–8 | error model, COPY helper | golden fixes | radar, baselines | truth files, manifest | RulePopover, DataTable | S2 layout |
 | **G1** | | | | | | |
-| T+8–11 | ingest + SAP preset | fastener, motor, UoM | candidates (BM25, FAISS) | procurement, classifier training | Ribbon, Footer | S2, S3 |
+| T+8–11 | ingest + SAP preset | fastener, motor, UoM | candidates (BM25, FAISS) | procurement, classifier training | SyntheticBadge, AirGapStatus | S2, S3 |
 | T+11–14 | egress guard, airgap API | dictionary versioning | harmonise job | classifier eval | S4 console | S4 lists |
 | **G2** | | | | | | |
 | T+14–17 | review service, issuance | golden ≥ 30 | radar API | metrics module | S5, S6 | S8 list/detail |
@@ -349,7 +360,7 @@ P11                                                                       ██
 
 | Gate | Time | Commands / checks | Pass condition |
 |---|---|---|---|
-| G1 | T+8 | `make test`; `python -m app.cli decide --file data/synthetic/seed-7` | 25 golden + property tests green; verdict mix printed; rule IDs present |
+| G1 | T+8 | `make test`; `python -m app.cli decide --file data/synthetic/seed-7` | 25 golden + property + conformance tests green; golden diff empty; verdict mix printed; rule IDs present; tag `gate-1` |
 | G2 | T+14 | upload 3 files in UI; start run; `curl 127.0.0.1:8080/api/v1/system/airgap` | run DONE; 4 channels in stats; `blocked_egress_attempts: 0` |
 | G3 | T+20 | maker propose → checker confirm → **CPSE-C consent**; download crosswalk and migration pack; S12 verify | CNMC issued only after consent; files download; chain intact; S13 non-empty |
 | G4 | T+26 | `make eval SEED=7`; S11; S9 query; S0; **S10 impact preview of the demo draft** | report with bound + B1/B2/SpecID + honesty panel; USE_EXISTING; dashboard panels filled; preview shows transitions and blocks activation until golden tests pass |
@@ -364,7 +375,7 @@ P11                                                                       ██
 |---|---|---|
 | T+2 | Does `make up` work on every laptop? | the failing laptop becomes a frontend-only machine pointing at a teammate's API |
 | T+8 (G1) | 25 golden tests green? | R4 joins R2/R3 on the engine until green; Phase 5 starts late, UI continues against mocks |
-| T+14 (G2) | Run ≤ 10 min on 10k records? | demo on 3k records; snapshot the run |
+| T+14 (G2) | Run ≤ 10 min on the 3k demo set (DEC-09)? | lower `n_entities` or switch the dense channel off; snapshot the run |
 | T+14 | Dense channel working offline? | turn it off (blocking + BM25 still meet the flow); footer shows `DENSE OFF`; keep the ML classifier as the visible AI |
 | T+22 | G3 met? | switch to the minimum viable demo path (PRD 14.4); no P1 at all |
 | T+26 | G4 met? | P1 limited to SF-3 only |
@@ -383,7 +394,7 @@ The prototype is finished when all of these hold:
 4. ≥ 60 golden tests and all property tests pass on the release tag (PRD SC-2, SC-3).
 5. The evaluation page shows false merges *k* of *n* with a bound, both baselines and the honesty panel, all labelled SYNTHETIC (PRD SC-4, SC-10, SC-8).
 6. Audit verification passes; maker ≠ checker is enforced in UI, API and database.
-7. The footer shows AIR-GAPPED with 0 blocked attempts after the demo path (PRD SC-11).
+7. The footer shows "Air-gapped · blocked attempts: 0" after the demo path (PRD SC-11).
 8. No banned words anywhere (PRD NFR-14).
 9. A snapshot, a backup video and screenshots exist on two devices.
 
@@ -411,7 +422,7 @@ Write tests first for core/ code; do not modify golden tests to make them pass.
 
 ---
 
-## 10. Upstream updates (applied in PRD v0.5)
+## 10. Upstream updates (PRD v0.5, then v0.6)
 
 | Update | Where | Status |
 |---|---|---|
@@ -421,5 +432,6 @@ Write tests first for core/ code; do not modify golden tests to make them pass.
 | Screens S16 Users, S17 About, S18 Consents, S19 Change notices | PRD 11.1 | applied |
 | Run statuses CANCELLING / CANCELLED | PRD FR-507 | applied |
 | Re-positioning after the 41-repo scan; SF-11 consent and SF-6 impact preview in P0; SF-12 in P1 | PRD 1.7–1.11, Appendix G | applied |
+| Build decisions DEC-01 … DEC-27 (Phases 1–4) folded in | PRD v0.6 17.3 and C.1, TRD v1.2, App Flow v1.3, UI/UX v1.3, Backend Schema §9.2/§12, this plan v1.2 | applied (3 Oct 2026) |
 
 *End of Implementation Plan.*

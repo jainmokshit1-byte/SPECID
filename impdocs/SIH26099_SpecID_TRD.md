@@ -4,8 +4,8 @@
 | Field | Value |
 |---|---|
 | Document | Technical Requirements Document (TRD) for the SpecID **prototype** |
-| Version / status | **v1.1 draft** · 3 Oct 2026 (v1.0 earlier the same day). v1.1: multi-CPSE consent (TR-MOD-32, TR-ALG-11), rulebook impact preview promoted to P0 with affected CNMCs and CPSEs (TR-ALG-10), change notices (TR-MOD-33, P1), schema v0.6, full route list from App Flow, production path (section 19) |
-| Derived from | `SIH26099_SpecID_Prototype_PRD.md` **v0.5** (what to build) and `SIH26099_Research_Solution_PPT_Content.md` **v0.5** (why). This TRD says **how**. Companions: 03 App Flow, 04 UI/UX Design Brief, 05 Backend Schema (authoritative DDL), 06 Implementation Plan |
+| Version / status | **v1.2** · 3 Oct 2026. v1.2 aligns with build decisions DEC-01 … DEC-27 (Phases 1–4): `CONSENT_MODE` and `GIT_COMMIT` settings, memory limits and the 3k demo set (DEC-09), normaliser fixed point (TR-MOD-01), `uom_canonical(raw, dictionary)`, `load_dictionary`, `cluster_with_blocked`, component names `SyntheticBadge` / `AirGapStatus`, air-gap wording, tooling files, TD-11 … TD-16. v1.1: v1.1: multi-CPSE consent (TR-MOD-32, TR-ALG-11), rulebook impact preview promoted to P0 with affected CNMCs and CPSEs (TR-ALG-10), change notices (TR-MOD-33, P1), schema v0.6, full route list from App Flow, production path (section 19) |
+| Derived from | `SIH26099_SpecID_Prototype_PRD.md` **v0.6** (what to build) and `SIH26099_Research_Solution_PPT_Content.md` **v0.5** (why). This TRD says **how**. Companions: 03 App Flow, 04 UI/UX Design Brief, 05 Backend Schema (authoritative DDL), 06 Implementation Plan |
 | PS owner | Ministry of Petroleum & Natural Gas · Chennai Petroleum Corporation Limited (CPCL) · Software · Smart Automation |
 | Audience | The six-person build team (PRD 14.1 roles R1–R6) |
 | Owner | [tech lead, R1] |
@@ -261,15 +261,15 @@ class Decision:
 
 | ID | Module | Public interface | Behaviour and invariants | PRD |
 |---|---|---|---|---|
-| TR-MOD-01 | `core/normalise.py` | `normalise(text: str, dictionary: Dictionary) -> str` | Ordered rules of PRD 9.2; expansions come from the versioned dictionary, not literals. **Idempotent**. Unicode NFKC first; non-printing characters removed | FR-201–203 |
-| TR-MOD-02 | `core/units.py` | `nps_to_dn(nps: str) -> int \| None`; `uom_canonical(raw: str) -> tuple[str \| None, bool]` (value, ambiguous); `hp_to_kw(hp: float) -> float` | Tables B.1 / B.2 of the PRD and the UoM alias table (Appendix I). Unknown sizes → `None`; ambiguous UoM (`MT`) → `(None, True)` | FR-202, FR-205 |
+| TR-MOD-01 | `core/normalise.py` | `normalise(text: str, dictionary: Dictionary) -> str` | Ordered rules of PRD 9.2; expansions come from the versioned dictionary, not literals. Unicode NFKC first; non-printing characters removed. **The rules repeat until the output stops changing (max 8 passes)**, which makes the function **idempotent** (PRD 9.2, DEC-24); reaching the cap logs `normalise_max_passes_reached` with the input's SHA-256 only | FR-201–203 |
+| TR-MOD-02 | `core/units.py` | `nps_to_dn(nps: str) -> int \| None`; `uom_canonical(raw: str, dictionary: Dictionary) -> tuple[str \| None, bool]` (value, ambiguous; aliases come from the versioned UOM dictionary, DEC-23); `hp_to_kw(hp: float) -> float` | Tables B.1 / B.2 of the PRD and the UoM alias table (Appendix I). Unknown sizes → `None`; ambiguous UoM (`MT`) → `(None, True)` | FR-202, FR-205 |
 | TR-MOD-03 | `core/classify.py` | `classify(norm_text: str, model: CategoryModel \| None, threshold: float) -> tuple[str \| None, str, float \| None]` returns (category, source, probability) | Rules first (PRD Appendix C `CATS` order). If no rule fires and a model is loaded: predict; return the category only if `p ≥ threshold` (default 0.80), else `(None, "NONE", p)` | FR-402 |
 | TR-MOD-04 | `core/extract.py` | `extract(text, mpn=None, maker=None, *, dictionary, model, threshold) -> Spec` | Normalise → classify → category extractor → residual tokens (minus stop words). Every conversion or inference recorded in `meta[attr].note` | FR-301–303, FR-307, FR-1431 |
-| TR-MOD-05 | `core/templates.py` | `load_templates(dir) -> dict[str, Template]`; `Template` (Pydantic) with `core`, `extended`, `tolerant`, `make`, `critical_default`, `value_domains`, `aliases`, `rule_text`, `substitutes` (P1), `class_path`, `unspsc` | Validation errors abort startup with file and line (PRD 6.5). `rule_text` keys must be attributes of the template | FR-401, FR-405, FR-1432 |
-| TR-MOD-06 | `core/decide.py` | `decide(a: Spec, b: Spec, templates: Mapping[str, Template], criticality: tuple[bool \| None, bool \| None] = (None, None)) -> Decision` | Exactly PRD 9.5. **Pure and symmetric** (`decide(a,b).verdict == decide(b,a).verdict`). Criticality per item overrides the template default when given (PRD D-02). No ML input | FR-601–609, FR-611 |
-| TR-MOD-07 | `core/cluster.py` | `constrained_clusters(n: int, edges: list[tuple[int,int,float]], conflict: Callable[[int,int], bool]) -> list[list[int]]` plus `blocked_edges` output | PRD 9.7. Edges sorted by (score desc, i, j) for determinism. `conflict` is memoised by the caller | FR-701–703 |
+| TR-MOD-05 | `core/templates.py` | `load_templates(dir) -> dict[str, Template]`; `load_dictionary(dir) -> Dictionary`; `Template` (Pydantic, the one definition; `schemas/jsonb.TemplateDefinition` is an alias) with `core`, `extended`, `tolerant`, `make`, `critical_default`, `value_domains`, `aliases`, `rule_text`, `substitutes` (P1), `class_path`, `unspsc` | Validation errors raise `TemplateError("<file>:<line>: <problem>")` and abort API startup (PRD 6.5); `/health` reports the loaded `{template_id: version}`. `rule_text` keys must be attributes of the template | FR-401, FR-405, FR-1432 |
+| TR-MOD-06 | `core/decide.py` | `decide(a: Spec, b: Spec, templates: Mapping[str, Template], criticality: tuple[bool \| None, bool \| None] = (None, None)) -> Decision` | Exactly PRD 9.5 (including DEC-26: `IDENTICAL` only with MPN and manufacturer present on both sides, case-insensitive; unresolvable values are unknown, never a conflict). A missing template for the pair's category is a programming error (`KeyError`). **Pure and symmetric** (`decide(a,b).verdict == decide(b,a).verdict`). Criticality per item overrides the template default when given (PRD D-02). No ML input | FR-601–609, FR-611 |
+| TR-MOD-07 | `core/cluster.py` | `constrained_clusters(n: int, edges: list[tuple[int,int,float]], conflict: Callable[[int,int], bool]) -> list[list[int]]` plus `cluster_with_blocked(...)` returning `BlockedEdge(i, j, score, reason ∈ {conflict, size cap})` | PRD 9.7. Edges sorted by (score desc, i, j) for determinism; the 200-member cap is checked before the conflict check. `conflict` is memoised by the caller | FR-701–703 |
 | TR-MOD-08 | `core/cnmc.py` | `new_cnmc(seq: int) -> str`; `cnmc_valid(code: str) -> bool` | `NMC-` + 10 digits + Luhn digit | FR-902 |
-| TR-MOD-09 | `core/shortdesc.py` | `short_desc(spec) -> str \| None`; `long_desc(spec) -> str` | ≤ 40 chars or `None` (never truncate) | FR-901 |
+| TR-MOD-09 | `core/shortdesc.py` | `short_desc(spec) -> str \| None`; `long_desc(spec) -> str` | ≤ 40 chars or `None` (never truncate); missing parts are left out, never printed as `None` (DEV-1); long-description order per PRD 9.9 | FR-901 |
 | TR-MOD-10 | `core/radar.py` | `text_sim(a_norm, b_norm) -> float`; `lookalike_class(sim, verdict, hi, lo) -> str \| None` | token-set ratio / 100 on **normalised** text | FR-1401 |
 | TR-MOD-11 | `core/baselines.py` | `b1(sim, tau) -> bool`; `b2(sim, raw_a, raw_b, tau) -> bool` | PRD 10.2b; numeric tokens from **raw** texts | FR-1411 |
 | TR-MOD-12 | `core/confidence.py` | `p_rule(decision) -> float \| None` | `0.98 − 0.10 × ext_flags − 0.15 × residual_flag`, floor 0.50 | FR-607 |
@@ -334,7 +334,7 @@ store channel bitmask per pair (B=1, L=2, D=4, M=8) in run stats for pair-comple
 |---|---|---|
 | TR-ALG-01a | **Blocking key is `(category, size_dn)`, not `(category, size_dn, class)`** (TD-03). Keeping rating near-misses (CL150 vs CL300) in the same block ensures they become candidates, so the veto, the Look-alike Guard (FR-1402) and the false-merge metric see them. Hard negatives never reached by any channel are counted and reported (PRD 10.2) | P0 |
 | TR-ALG-01b | Deterministic: BM25 ties broken by record UUID; FAISS `IndexFlatIP` is exact | P0 |
-| TR-ALG-01c | Embeddings are computed once per spec (batch size 128, `normalize_embeddings=True`) and stored in `spec_record.embedding`; re-runs reuse them | P0 |
+| TR-ALG-01c | Embeddings are computed once per spec (batch size **64**, DEC-09; `normalize_embeddings=True`) and stored in `spec_record.embedding`; re-runs reuse them | P0 |
 
 ### TR-ALG-02 Decision (P0)
 Implemented exactly as PRD 9.5 and Appendix C `decide`. Technical additions:
@@ -466,8 +466,8 @@ The authoritative DDL is **doc 05 Backend Schema, Appendix A (schema v0.6: 58 st
 
 | Object | Prototype volume | Estimate |
 |---|---|---|
-| `material_record` | ~10k | < 20 MB |
-| `spec_record` incl. 384-d `real[]` embedding | ~10k | ≈ 25 MB |
+| `material_record` | ~3k (demo, DEC-09); ~10k by parameter | < 20 MB |
+| `spec_record` incl. 384-d `real[]` embedding | ~3k (≤ 10k) | ≈ 8 MB (≈ 25 MB at 10k) |
 | `pair_decision` | ≤ 20 neighbours per record per channel → ≤ ~250k pairs | evidence ≈ 1 KB after TR-DAT-05 → ≈ 250–400 MB before TOAST compression |
 | Registry | ~5k CNMC, ~10k crosswalk | < 20 MB |
 
@@ -526,7 +526,7 @@ See Appendix F for the Pydantic models of `Decision`, `SearchRequest/Response`, 
 | TR-UI-01 | SPA routes exactly as **03 App Flow section 2** (that table is authoritative): `/login`, `/`, `/upload`, `/batches/:id/quality`, `/runs`, `/runs/new`, `/runs/:id`, `/review`, `/clusters/:id`, `/pairs/:id`, `/registry`, `/registry/:cnmc`, `/exports`, `/search`, `/templates`, `/templates/:id`, `/evaluation`, `/evaluation/:id`, `/lookalikes`, `/audit`, `/admin/users`, `/consents` (S18), `/about`; P1: `/erp-sim`, `/pooling`, `/notices` (S19) | P0 |
 | TR-UI-02 | API types generated from OpenAPI with `openapi-typescript` (`npm run gen:api`); no hand-written response types | P0 |
 | TR-UI-03 | Server state only through TanStack Query. Query keys `['runs', id]`, `['clusters', filters]`, … Run progress uses `refetchInterval: 2000` until status is terminal | P0 |
-| TR-UI-04 | Shared components: `VerdictBadge` (colour + icon + text), `EvidenceCard` (rows, rule popover, conversion notes, collapsed MISSING_BOTH), `SyntheticRibbon`, `AirGapFooter` (polls `/system/airgap` every 10 s), `RulePopover`, `ProblemAlert` (renders RFC 7807), `DataTable` (virtualised with @tanstack/react-virtual for > 200 rows) | P0 |
+| TR-UI-04 | Shared components: `VerdictBadge` (colour + icon + text), `EvidenceCard` (rows, rule popover, conversion notes, collapsed MISSING_BOTH), `SyntheticBadge` (top bar, not dismissible), `AirGapStatus` (footer; polls `/system/airgap` every 10 s; grey "Air-gap status unavailable" when unreadable), `RulePopover`, `ProblemAlert` (renders RFC 7807), `DataTable` (virtualised with @tanstack/react-virtual for > 200 rows) | P0 |
 | TR-UI-05 | Role-aware rendering from `/me`: makers never see Confirm; checkers never see Propose on their own proposals; the server still enforces (TR-SEC-03) | P0 |
 | TR-UI-06 | Accessibility: verdicts never by colour alone; keyboard shortcuts (P1) with an overlay; focus visible; contrast ≥ 4.5:1 | P0 |
 | TR-UI-07 | Monospace font for descriptions and codes; all fonts self-hosted (no Google Fonts at runtime, C-02) | P0 |
@@ -538,13 +538,13 @@ See Appendix F for the Pydantic models of `Decision`, `SearchRequest/Response`, 
 
 ## 10. Performance requirements and budgets [T]
 
-Measured on the reference laptop (8 cores, 16 GB) with the bundled seed-7 dataset (~10k records, 3 CPSEs).
+Measured on the reference laptop (8 cores, 16 GB) with the bundled seed-7 dataset (**~3k records**, 3 CPSEs; DEC-09: Docker at default memory, `api` 4 GB, `db` 1 GB). Budgets written for 10k are upper bounds; the 3k run must meet them.
 
 | ID | Stage | Budget [T] | Technique |
 |---|---|---|---|
 | TR-PRF-01 | Ingest + quality report (3 files) | ≤ 30 s | COPY, SQL aggregates |
 | TR-PRF-02 | Normalise + classify + extract 10k | ≤ 30 s | Pure Python, compiled regex at import |
-| TR-PRF-03 | Embeddings 10k (MiniLM, CPU) | ≤ 120 s first run; 0 s on re-run | batch 128; stored vectors; `torch.set_num_threads(cores)` |
+| TR-PRF-03 | Embeddings 10k (MiniLM, CPU) | ≤ 120 s first run; 0 s on re-run | batch 64 (DEC-09); stored vectors; `torch.set_num_threads(cores)` |
 | TR-PRF-04 | Candidate generation | ≤ 60 s | per-category indexes; numpy |
 | TR-PRF-05 | `decide` + text_sim + baselines for ≤ 250k pairs | ≤ 150 s | memo; rapidfuzz C implementation; batch processing |
 | TR-PRF-06 | Write pairs | ≤ 60 s | COPY batches of 5,000 |
@@ -593,7 +593,7 @@ Measured on the reference laptop (8 cores, 16 GB) with the bundled seed-7 datase
 | TR-OPS-09 | Observability: structlog JSON to stdout; `X-Request-ID` generated by nginx and logged by the API; `/api/v1/health` returns DB status, model hashes, template versions, guard status, git commit | NFR-11 | P0 |
 | TR-OPS-10 | Feature flags only through env (`EMBEDDINGS_ENABLED`, `LLM_ENABLED`, `AUTO_ELIGIBLE_ENABLED`, `EGRESS_GUARD_ENABLED`); the footer shows any flag that weakens the demo story (guard off, dense off) | 6.5, R-16 | P0 |
 
-**Air-gap demo procedure (PRD 15.1, 4:25):** footer shows `AIR-GAPPED · blocked attempts: 0` → `docker network inspect specid_backend --format '{{.Internal}}'` prints `true` → switch Wi-Fi off → run search-before-create → counter still 0.
+**Air-gap demo procedure (PRD 15.1, 4:25):** footer shows `Air-gapped · blocked attempts: 0` → `docker network inspect specid_backend --format '{{.Internal}}'` prints `true` → switch Wi-Fi off → run search-before-create → counter still 0.
 
 ---
 
@@ -674,12 +674,18 @@ Measured on the reference laptop (8 cores, 16 GB) with the bundled seed-7 datase
 | TD-08 | Swagger UI assets served locally (or docs disabled) | FastAPI's default docs page loads assets from a CDN | none |
 | TD-09 | ML category classifier is a fallback after rules, never first | Deterministic behaviour on known phrasing; ML adds coverage without changing golden results | consistent with FR-402 |
 | TD-10 | Consent is recorded per CPSE in its own table, not as extra review decisions | One row per (task, CPSE) lets the database enforce "each CPSE answers once" and keeps reasons for declines | PRD v0.5 FR-1501 |
+| TD-11 | PRD Appendix C is copied verbatim to `tests/reference/specid_ref.py` (a test checks it equals the PRD block); `tests/reference/test_conformance.py` compares `core/` with it under an allowlist DEV-1 … DEV-5 (PRD C.1) | The reference opens sockets, so it stays out of `core/`; the allowlist makes every deviation visible | PRD C.1 |
+| TD-12 | Golden and property tests are committed red, in their own commit, before any `core/` code; `git diff <that commit> -- tests/golden` must stay empty | Proof that no golden test was edited to pass | PRD 13.2 |
+| TD-13 | `core.supply_attribute` only needs a non-empty source note; the 5-character minimum is the DB CHECK on `attribute_supply.source_note` plus a 422 in the SF-3 service | Appendix D passes `"x"`; keeps `core/` faithful to the reference | none |
+| TD-14 | Hypothesis profiles: 500 examples in CI, 5,000 with `HYPOTHESIS_PROFILE=nightly` | CI time | none |
+| TD-15 | mypy strict on `core/`; PyYAML stubs skipped through a per-module override for `yaml` only | `types-PyYAML` is not in the frozen lock | none |
+| TD-16 | The audit hash canonicalises `ts` as ISO 8601 UTC with microseconds; failed logins commit `LOGIN_FAILED` before the 401; the JWT role is not trusted (user reloaded per request) | Chain recomputes in any DB time zone; disabled users lose access at once | none |
 
 **Open technical questions**
 
 | ID | Question | Owner |
 |---|---|---|
-| OQ-T1 | Exact hardware of each team laptop (cores, RAM, OS) — decides whether the demo uses 10k or 3k records | R1 |
+| OQ-T1 | ~~Exact hardware of each team laptop — 10k or 3k records~~ **Resolved (DEC-09): 3k records, Docker default memory** | R1 |
 | OQ-T2 | Does the venue allow an external screen + HDMI only, or also a second laptop on the same switch (offline LAN demo)? | R6 |
 | OQ-T3 | Will CPSE sample files include long texts (SAP READ_TEXT) and procurement history? Affects FR-107 and the SAP preset | R1 via SPOC (PRD Q-12) |
 
@@ -717,7 +723,7 @@ The prototype is deliberately single-laptop. This section lists what a pilot or 
 | Identity | local users, JWT | SSO with the CPSE's identity provider (OIDC/SAML, e.g. Keycloak or the CPSE directory); MFA for ADMIN and CHECKER; joiner-mover-leaver process |
 | Availability | one container each | PostgreSQL with streaming replica and point-in-time recovery; API behind a load balancer with ≥ 2 instances; job workers separated (Celery/Prefect) with a durable queue |
 | Backup and DR | `pg_dump` snapshot | daily base backup + WAL archiving; tested restore; documented RPO/RTO agreed with the registry owner |
-| Scale | ~10k records, FAISS in memory | 10⁶+ records: pgvector or OpenSearch, partitioned `pair_decision`, incremental runs per CPSE upload |
+| Scale | ~3k demo records (≤ 10k by parameter), FAISS in memory | 10⁶+ records: pgvector or OpenSearch, partitioned `pair_decision`, incremental runs per CPSE upload |
 | Security assurance | internal checks | independent VAPT before go-live; secure-SDLC (dependency scanning, SBOM, signed images); secrets in a vault; follow CERT-In directions for incident reporting and log retention applicable to the hosting organisation |
 | Privacy | synthetic only | user accounts are personal data: apply the Digital Personal Data Protection Act, 2023 obligations (notice, purpose limitation, retention); procurement data stays CPSE-scoped (optional RLS, doc 05 §5.4) |
 | Accessibility | WCAG 2.1 AA target | align with the Government of India web guidelines (GIGW) if the registry is exposed as a government web application |
@@ -748,6 +754,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+    mem_limit: 1g                          # DEC-09
     networks: [backend]
 
   api:
@@ -758,6 +765,8 @@ services:
       DB_HOST: db
       MODEL_DIR: /models
       TEMPLATE_DIR: /app/templates
+      GIT_COMMIT: ${GIT_COMMIT:-unknown}   # exported by `make up` (DEC-02)
+    mem_limit: 4g                          # DEC-09: Docker at default memory
     volumes:
       - ./models:/models:ro
       - ./templates:/app/templates:ro
@@ -854,10 +863,10 @@ COPY --from=build /src/dist /usr/share/nginx/html
 | Target | Does |
 |---|---|
 | `make models` | (online, once) download MiniLM to `./models`, train `category_clf-v1`, write `models/manifest.json` |
-| `make up` / `make down` | `docker compose up -d --build` / `docker compose down` |
+| `make up` / `make down` | `GIT_COMMIT=$(git rev-parse --short HEAD) docker compose up -d --build` / `docker compose down` |
 | `make seed` | CPSEs, demo users, templates, seed-7 synthetic data |
-| `make demo-data SEED=7` | regenerate synthetic files and manifest |
-| `make test` / `make test-ml` | CI test set / ML-dependent tests |
+| `make demo-data` (`SEED=7` default) | regenerate `data/synthetic/seed-<n>` files and manifest (`n_entities` 1,200 → about 3k records) |
+| `make test` / `make test-ml` | CI test set via `backend/scripts/ci_local.sh` (ruff, black, pytest on a throwaway Postgres; never against the stack's DB) / ML-dependent tests |
 | `make eval SEED=7` | evaluation run + Markdown/JSON report |
 | `make bench` | TR-TST-11 scripts |
 | `make offline-check` | TR-TST-10 |
@@ -876,6 +885,7 @@ JWT_EXPIRE_MIN=480
 OFFLINE=true
 EGRESS_GUARD_ENABLED=true
 EMBEDDINGS_ENABLED=true
+CONSENT_MODE=ALL_PARTICIPANTS
 LLM_ENABLED=false
 AUTO_ELIGIBLE_ENABLED=false
 CLASSIFIER_THRESHOLD=0.80
@@ -888,6 +898,8 @@ CORS_ORIGIN=http://127.0.0.1:8080
 ## Appendix D: Settings model (`app/settings.py`, outline)
 
 ```python
+from typing import Literal
+
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -899,6 +911,8 @@ class Settings(BaseSettings):
     offline: bool = True
     egress_guard_enabled: bool = True
     embeddings_enabled: bool = True
+    consent_mode: Literal["ALL_PARTICIPANTS", "NONE"] = "ALL_PARTICIPANTS"   # DEC-01
+    git_commit: str = "unknown"                                              # DEC-02
     llm_enabled: bool = False
     auto_eligible_enabled: bool = False
     classifier_threshold: float = 0.80
@@ -1164,17 +1178,19 @@ Coverage per template (PRD 13.2): ≥ 3 near-miss pairs, ≥ 3 equivalent pairs 
 
 ```
 specid/
-├─ docker-compose.yml · Makefile · .env.example · README.md
+├─ docker-compose.yml · Makefile · .env.example · .gitattributes (LF) · README.md · CLAUDE.md · PROGRESS.md
 ├─ backend/
-│  ├─ Dockerfile · requirements.lock · requirements-ml.lock · requirements-dev.txt · alembic.ini
+│  ├─ Dockerfile · requirements*.in (pip-compile sources) · requirements.lock · requirements-ml.lock · requirements-dev.txt · pyproject.toml (ruff/black/pytest/mypy) · alembic.ini
 │  ├─ app/ (main.py settings.py security/ api/ core/ services/ eval/ db/ schemas/)
-│  ├─ scripts/ (fetch_models.py train_classifier.py bench_run.py bench_search.py offline_check.py)
-│  └─ tests/ (unit/ golden/ property/ api/ integration/ eval/ arch/)
+│  ├─ app/cli.py (`python -m app.cli generate | decide --file DIR | decide --a --b | extract --text`)
+│  ├─ scripts/ (ci_local.sh fetch_models.py train_classifier.py bench_run.py bench_search.py offline_check.py)
+│  └─ tests/ (unit/ golden/ property/ reference/ api/ integration/ eval/ arch/)
 ├─ frontend/ (Dockerfile nginx.conf src/{pages,components,api,hooks})
 ├─ templates/ (valve.yaml pipe.yaml flange.yaml fastener.yaml motor.yaml gasket.yaml uom.yaml dictionary.yaml)
 ├─ models/ (git-ignored; manifest.json committed)
 ├─ data/ (synthetic/ generated; fixtures/)
-├─ docs/ (PRD.md TRD.md dossier.md demo-script.md)
+├─ impdocs/ (source documents; never edited by the build)
+├─ docs/ (DECISIONS.md demo-script.md)
 └─ .github/workflows/ci.yml
 ```
 

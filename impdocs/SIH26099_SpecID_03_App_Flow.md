@@ -4,8 +4,8 @@
 | Field | Value |
 |---|---|
 | Document | 03 of 6 · App Flow (every page, every click, every navigation path) |
-| Version | v1.2 draft · 3 Oct 2026. **v1.2: simpler navigation** — 5 task-based sidebar items with tabs instead of 7 groups and ~20 links, role-filtered, unbuilt screens hidden; everyone lands on Home with one "next step"; SYNTHETIC shown as a compact badge; slim footer. Routes and URLs are unchanged. v1.1: consent queue, impact preview P0, change notices |
-| Source of truth above this | PRD v0.5 (screens S0–S19, user stories US-01–US-32, demo 15.1) · TRD v1.1 (TR-UI-01 points to this route table, API catalogue) |
+| Version | **v1.3** · 3 Oct 2026. v1.3 aligns with build decisions: INTEGRATOR read-only registry (DEC-19), footer wording "Air-gapped · blocked attempts: n" plus "Consent: all CPSEs" (DEC-10), Next-step card never shows invented numbers (DEC-16), dev-only `?dev=1` switch, user-admin actions (DEC-14). v1.2: **v1.2: simpler navigation** — 5 task-based sidebar items with tabs instead of 7 groups and ~20 links, role-filtered, unbuilt screens hidden; everyone lands on Home with one "next step"; SYNTHETIC shown as a compact badge; slim footer. Routes and URLs are unchanged. v1.1: consent queue, impact preview P0, change notices |
+| Source of truth above this | PRD v0.6 (screens S0–S19, user stories US-01–US-32, demo 15.1) · TRD v1.2 (TR-UI-01 points to this route table, API catalogue) |
 | Next documents | 04 UI/UX Design Brief (how each screen looks) · 05 Backend Schema (where data lives) · 06 Implementation Plan (build order) |
 
 **How an AI coding agent should use this file.** Build pages *only* from the route table in section 2. Every button listed in section 5 must exist and must go exactly where the redirect column says. Every list must implement the loading, empty and error states in section 8. Never invent a page that is not listed here; if one seems needed, add it here first.
@@ -32,7 +32,7 @@ SpecID is an **internal, role-based web app** with no public pages and no self s
 | `/review` | S5 Review queue | Clusters sorted by priority with filters | MAKER, CHECKER | P0 | FR-801 |
 | `/clusters/:clusterId` | S6 Cluster review | Records side by side, evidence card, actions | MAKER, CHECKER (AUDITOR, ADMIN read-only) | P0 | FR-802–803 |
 | `/pairs/:pairId` | S7 Pair evidence | Full-page version of the pair modal (deep link) | MAKER, CHECKER, ADMIN, AUDITOR | P0 | FR-609 |
-| `/registry` | S8a Registry list | CNMCs with search and filters | everyone except INTEGRATOR (API only) | P0 | FR-906 |
+| `/registry` | S8a Registry list | CNMCs with search and filters | everyone; INTEGRATOR **read-only** (no merge, unmerge or migration actions; DEC-19) | P0 | FR-906 |
 | `/registry/:cnmc` | S8b CNMC detail | Canonical spec, class path, members, crosswalk, substitutes (P1), history, unmerge (P1) | as above | P0 | FR-901–907, FR-1481–1482 |
 | `/exports` | S8c Exports | Crosswalk (CSV / JSON / SAP-style) and migration packs per CPSE | MAKER, CHECKER, ADMIN | P0 | FR-905, FR-907 |
 | `/search` | S9 Search-before-create | Free-text check against the registry | MAKER, CHECKER, ADMIN, INTEGRATOR | P0 | FR-1001–1003 |
@@ -50,7 +50,7 @@ SpecID is an **internal, role-based web app** with no public pages and no self s
 | `/notices` | S19 Change notices | My CPSE's inbox of registry and rule changes; acknowledge; delta migration file | MAKER, CHECKER, INTEGRATOR (read) | P1 | FR-1511–1513 |
 | `*` | 404 | "Page not found" + link to the role's home | everyone | P0 | — |
 
-S16 (users), S17 (about), S18 (consents) and S19 (change notices) are listed in PRD v0.5 section 11.1. S16 and S17 were added first by this document: the PRD needs a place for ADMIN to manage users (FR-1301, section 2 "Manage users") and a place to read the honesty text outside the evaluation page.
+S16 (users), S17 (about), S18 (consents) and S19 (change notices) are listed in PRD section 11.1. S16 and S17 were added first by this document: the PRD needs a place for ADMIN to manage users (FR-1301, section 2 "Manage users") and a place to read the honesty text outside the evaluation page.
 
 ---
 
@@ -70,7 +70,7 @@ S16 (users), S17 (about), S18 (consents) and S19 (change notices) are listed in 
 │              │  content                                                                 │
 │              │                                                                          │
 │ ⚙ Rules      │                                                                          │
-│ ? Help       │                                              ● Air-gapped · 0 blocked    │ slim footer
+│ ? Help       │ Consent: all CPSEs            ● Air-gapped · blocked attempts: 0 │ slim footer
 └──────────────┴──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -100,17 +100,17 @@ P1 screens (S14, S15, S19) appear as tabs only once built. **A screen that is no
 | Rules | Rulebook (read) | Rulebook (read) | all tabs | Rulebook, Audit | – |
 | Help | ✔ | ✔ | ✔ | ✔ | ✔ |
 
-Each role sees **at most 7 items**; an INTEGRATOR sees two. Hidden items are not rendered, and the server still returns 403 if their URL is opened directly (TRD TR-SEC-03).
+Each role sees **at most 7 items**; an INTEGRATOR sees two. Screens not yet built are hidden from navigation (their URLs render a placeholder); a developer-only `?dev=1` switch lists them, compiled out of production builds (DEC-10). Hidden items are not rendered, and the server still returns 403 if their URL is opened directly (TRD TR-SEC-03).
 
 ### 3.3 Global elements and their behaviour
 
 | Element | Behaviour |
 |---|---|
-| **Next-step card** (Home, top) | One sentence and one button for the user's most important pending action, by role: maker "12 clusters wait for your review → Start reviewing"; checker "2 national codes wait for CPSE-C's consent → Open consents"; admin first-run "1 Upload files · 2 Check quality · 3 Run matching · 4 Review · 5 Issue codes" with the current step highlighted; auditor "Verify the audit chain". Nothing pending → "All caught up" |
+| **Next-step card** (Home, top) | One sentence and one button for the user's most important pending action, by role. **Counts come only from real data; before runs exist every role except AUDITOR sees the first-run checklist at step 1, with disabled buttons that say why** (DEC-16). Examples once data exists: maker "12 clusters wait for your review → Start reviewing"; checker "2 national codes wait for CPSE-C's consent → Open consents"; admin first-run "1 Upload files · 2 Check quality · 3 Run matching · 4 Review · 5 Issue codes" with the current step highlighted; auditor "Verify the audit chain". Nothing pending → "All caught up" |
 | **Run selector** (top bar) | Only on run-scoped pages (Home, Review, Look-alikes); hidden elsewhere. Default = latest `DONE` run; writes `?run=<id>` |
 | **Badges** | Numbers only where action is needed: "Review 12" (items waiting for this user), "Consents 2". No other counters in the sidebar |
 | **SYNTHETIC badge** | Compact amber badge "SYNTHETIC DATA" in the top bar of every page that shows synthetic data; hover/tap shows "Results on synthetic data are optimistic by construction". Not dismissible; visible in screenshots (replaces the full-width ribbon, which used a whole line of screen) |
-| **Air-gap status** (slim footer, right) | "● Air-gapped · 0 blocked" (green dot); grey "Air-gap status unavailable" until `/system/airgap` exists; adds `GUARD OFF` / `DENSE OFF` in amber when relevant. Version and commit move to Help |
+| **Footer** (slim) | Left, muted: "Consent: all CPSEs" (from `/health` `consent_mode`, FR-1504). Right, **air-gap status**: "● Air-gapped · blocked attempts: n" (green dot); grey "Air-gap status unavailable" until `/system/airgap` exists; adds `GUARD OFF` / `DENSE OFF` in amber when relevant. Version and commit move to Help |
 | **Help** | S17: glossary (Identical, Equivalent, Not equivalent, Insufficient data, CNMC, consent), honesty text, versions; shortcut overlay (P1) |
 | **User menu** | Name, role, CPSE; "Change password"; "Logout" |
 | **Breadcrumbs** | On detail pages only: `Review › Cluster 4F2A`, `Registry › NMC-00000001974` |
@@ -144,7 +144,7 @@ flowchart LR
 | Rule | Detail |
 |---|---|
 | Token storage | JWT kept in memory and mirrored in `sessionStorage` (survives refresh, cleared when the tab closes). Never `localStorage` |
-| Expiry | 8 h. Ten minutes before expiry, a toast offers "Stay signed in" (re-login dialog without leaving the page) |
+| Expiry | 8 h. Ten minutes before expiry, a toast offers "Stay signed in" (re-login dialog without leaving the page; built in Phase 9, DEC-17). Until then an expired token gives 401 → `/login?next=` |
 | First login of a seeded user | Forced "Change password" dialog before the role home (except demo users when `SEED_DEMO_USERS=true`) |
 | Logout | Clears token → `/login` (no `next`) |
 | Onboarding | None as a separate flow. Empty states on S0 and S5 guide the first actions (section 8) |
@@ -286,7 +286,7 @@ Inbox for the user's CPSE: kind (issued, merged, unmerged, declined, rule activa
 
 ### 5.15 S15 Pooling `/pooling` (P1) · S16 Users `/admin/users` · S17 About `/about`
 - **S15**: table of CNMCs held by ≥ 2 CPSEs, combined annual value and quantity, export CSV.
-- **S16**: user list; "Add user" modal (username, role, CPSE, temporary password); "Reset password"; "Disable"; API keys (P1): create (shown once), revoke.
+- **S16**: user list; "Add user" modal (username, role, CPSE — required for MAKER and CHECKER — temporary password); "Reset password" (user must change it at next login); "Disable" (not one's own account); API keys (P1): create (shown once), revoke. Endpoints PRD API-39 … API-42 (DEC-14); the user menu's "Change password" uses `POST /me/password` (audit `PASSWORD_CHANGED`, DEC-15).
 - **S17**: honesty text, evidence ladder, versions (app, templates, dictionary, models, commit), licences of bundled models and fonts.
 
 ---

@@ -4,8 +4,8 @@
 | Field | Value |
 |---|---|
 | Document | 05 of 6 · Backend Schema (data structure, tables, auth, relationships) |
-| Version | **schema v0.6** · document v1.1 draft · 3 Oct 2026 (v1.0 / schema v0.5 earlier the same day) |
-| Source of truth above this | PRD v0.5 (section 7; PRD Appendix E now points here) · TRD v1.1 (sections 7, 11) · 03 App Flow v1.1 |
+| Version | **schema v0.6 (unchanged)** · document **v1.2** · 3 Oct 2026. v1.2 records build decisions without any DDL change: audit action `PASSWORD_CHANGED` (DEC-15), seeding writes no audit rows (DEC-11), `dictionary.content` shapes and seed files (DEC-13), gasket seeded DRAFT. v1.1 / v1.0 earlier the same day |
+| Source of truth above this | PRD v0.6 (section 7; PRD Appendix E points here) · TRD v1.2 (sections 7, 11) · 03 App Flow v1.3 |
 | Database | PostgreSQL 16, no extensions required |
 | Verified | The full DDL (Appendix A, 58 statements, 26 tables) was **executed on PostgreSQL 16**; constraint, trigger, consent, row-level-security and dashboard-query tests were run against it (section 15). The data dictionary in section 4 was **generated from that live database**, so it matches the DDL exactly |
 
@@ -691,7 +691,7 @@ Optional RLS (P2, for the pilot): `procurement_line` visible only when `app.cpse
 | `upload_batch.quality` | rows, empty_short_text, short_text_over_40, duplicate_legacy_codes, completeness{}, category_share{}, core_parse_rate{}, uom_ambiguous | TRD 7.2 |
 | `material_record.raw` | original row as `{header: value}` | — |
 | `template.definition` | the YAML template as JSON (core, extended, tolerant, make, critical_default, value_domains, aliases, rule_text, substitutes, class_path, unspsc) | PRD Appendix A, TRD TR-MOD-05 |
-| `dictionary.content` | ABBREVIATION `{abbr: expansion}` · UOM `{alias: canonical}` + `ambiguous[]` · HEADER_SYNONYM `{target: [synonyms]}` · UNSPSC_MAP `{class_path: {code, source_note}}` | TRD Appendix H, I |
+| `dictionary.content` | ABBREVIATION `{abbr: expansion}` (v2 adds whole phrases such as `RAISED FACE`→`RF`) · UOM `{"aliases": {alias: canonical}, "ambiguous": [...]}` · HEADER_SYNONYM `{target: [synonyms]}` · UNSPSC_MAP `{class_path: {code, source_note}}` | TRD Appendix H, I |
 | `spec_record.attrs` / `attr_meta` | `{attr: value}` / `{attr: {tier, confidence, note}}` | TRD 7.2 |
 | `run.config` / `run.stats` | see TRD 7.2 | TRD 7.2 |
 | `pair_decision.baseline` | `{"b1": bool, "b2": bool, "tau1": num, "tau2": num}` | TRD TR-ALG-04 |
@@ -754,7 +754,8 @@ Every state change writes one `audit_event` in the same transaction (PRD invaria
 
 | Action | Object type | Written when |
 |---|---|---|
-| `USER_CREATED`, `USER_ROLE_CHANGED`, `USER_DISABLED`, `PASSWORD_RESET`, `LOGIN_SUCCEEDED`, `LOGIN_FAILED` | `app_user` | S16, login |
+| `USER_CREATED`, `USER_ROLE_CHANGED`, `USER_DISABLED`, `PASSWORD_RESET` (by an ADMIN; sets `must_change_password`), `LOGIN_SUCCEEDED`, `LOGIN_FAILED` | `app_user` | S16, login |
+| `PASSWORD_CHANGED` (self-service or forced change; `after = {username, was_forced}`, never the password) | `app_user` | user menu, forced change at login (DEC-15) |
 | `API_KEY_CREATED`, `API_KEY_REVOKED` | `api_key` | S16 (P1) |
 | `BATCH_UPLOADED`, `BATCH_MAPPED`, `BATCH_INGESTED`, `BATCH_PURGED` | `upload_batch` | S2, `make purge-real` |
 | `PROCUREMENT_UPLOADED` | `upload_batch` | FR-107 |
@@ -836,10 +837,12 @@ None. The system is air-gapped; integrators **pull** through the API (search-bef
 |---|---|
 | `cpse` | CPSE-A, CPSE-B, CPSE-C (synthetic names; sector "Oil & Gas"), random `vendor_salt` each |
 | `app_user` | `meera` (MAKER, CPSE-A), `arjun` (CHECKER, CPSE-B), **`kavya` (CHECKER, CPSE-C — gives the CPSE-C consent in the demo)**, `admin` (ADMIN), `auditor` (AUDITOR), `erp` (INTEGRATOR). Passwords from `DEMO_PASSWORD`; `must_change_password = false` only when `SEED_DEMO_USERS=true` |
-| `template` | valve, pipe, flange, fastener, motor (v1 ACTIVE); gasket (v1 ACTIVE if P1 done) |
-| `dictionary` | ABBREVIATION v1, UOM v1 (TRD Appendix I), HEADER_SYNONYM v1 (TRD Appendix H), UNSPSC_MAP v1 (only entries with a source note) |
+| `template` | valve, pipe, flange, fastener, motor (v1 ACTIVE); gasket v1 **DRAFT** until the P1 gasket work is done (its extractor exists for the golden pairs; DEC-13, DEC-20) |
+| `dictionary` | ABBREVIATION v1, HEADER_SYNONYM v1 (TRD Appendix H) and UNSPSC_MAP v1 from `templates/dictionary.yaml`; UOM v1 from `templates/uom.yaml` (TRD Appendix I). UNSPSC_MAP v1 is **empty** until a code is verified with a source note |
 | Data | seed-7 synthetic batches for the three CPSEs, flagged `is_synthetic = true`, plus synthetic procurement history |
 | Demo snapshot | after seeding: one DONE run, a few issued CNMCs, an evaluation run (`make snapshot`) |
+
+**Seeding writes no `audit_event` rows** (DEC-11). It is a bootstrap outside the app; the hash chain starts with the first real action (usually a login). Tested by `test_seed_writes_no_audit_events`.
 
 ---
 
