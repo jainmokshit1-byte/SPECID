@@ -48,6 +48,7 @@ EXTRA_DOMAINS: dict[str, dict[str, list[Any]]] = {
     },
     "GASKET": {
         "size_dn": [50, 100],
+        "pressure_class": [150, 300],
         "winding_material": ["SS316", "A182-F316", "SS304"],
     },
 }
