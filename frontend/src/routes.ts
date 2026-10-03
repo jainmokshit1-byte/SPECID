@@ -1,4 +1,4 @@
-// Route table: 03 App Flow v1.1 section 2 is authoritative (TRD TR-UI-01).
+// Route table: 03 App Flow v1.2 section 2 is authoritative (TRD TR-UI-01).
 // `phase` = Implementation Plan phase that builds the screen (S17 assigned to Phase 7 by DECISIONS.md DEC-07);
 // null = not scheduled.
 
@@ -35,7 +35,7 @@ export const SHELL_ROUTES: RouteDef[] = [
   {
     path: "/",
     screen: "S0",
-    title: "Dashboard",
+    title: "Home",
     purpose:
       "Duplicates per CPSE, data quality, cross-CPSE clusters, review backlog, top clusters, demand aggregation",
     roles: MCAA,
@@ -288,47 +288,9 @@ export const SHELL_ROUTES: RouteDef[] = [
   },
 ];
 
-export interface NavItem {
-  label: string;
-  path: string;
-  p1?: boolean;
-}
+/** Screens whose real page exists. Only these appear in navigation (App Flow 3.1, UI/UX brief
+ * 1.4 rule 6); every other route still renders its placeholder by URL. Each phase adds its paths. */
+export const BUILT_PATHS: ReadonlySet<string> = new Set(["/"]);
 
-/** Sidebar groups, 03 App Flow 3.1. Role filtering (3.2) is added with auth in Phase 3. */
-export const NAV_GROUPS: { group: string; items: NavItem[] }[] = [
-  { group: "Overview", items: [{ label: "Dashboard", path: "/" }] },
-  {
-    group: "Data",
-    items: [
-      { label: "Upload", path: "/upload" },
-      { label: "Runs", path: "/runs" },
-    ],
-  },
-  { group: "Review", items: [{ label: "Queue", path: "/review" }] },
-  {
-    group: "Registry",
-    items: [
-      { label: "CNMCs", path: "/registry" },
-      { label: "Search", path: "/search" },
-      { label: "Exports", path: "/exports" },
-    ],
-  },
-  {
-    group: "Insight",
-    items: [
-      { label: "Look-alikes", path: "/lookalikes" },
-      { label: "Evaluation", path: "/evaluation" },
-    ],
-  },
-  {
-    group: "Governance",
-    items: [
-      { label: "Consents", path: "/consents" },
-      { label: "Notices", path: "/notices", p1: true },
-      { label: "Rulebook", path: "/templates" },
-      { label: "Audit", path: "/audit" },
-      { label: "Users", path: "/admin/users" },
-    ],
-  },
-  { group: "Integration", items: [{ label: "ERP sim", path: "/erp-sim", p1: true }] },
-];
+/** Pages that show the run selector in the top bar (App Flow 3.3). */
+export const RUN_SCOPED_PATHS: ReadonlySet<string> = new Set(["/", "/review", "/lookalikes"]);

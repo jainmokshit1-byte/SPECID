@@ -1,12 +1,11 @@
 import { Link } from "react-router-dom";
-import { SyntheticRibbon } from "../components/layout/SyntheticRibbon";
 import { LOGIN_ROUTE } from "../routes";
 
-/** S1 Login placeholder: rendered outside the shell. Sign-in is built in Phase 3. */
+/** S1 Login placeholder: rendered outside the shell. Sign-in is built in Phase 3. It shows no data,
+ * so it carries no SYNTHETIC DATA badge (UI/UX brief 6). */
 export function Login() {
   return (
     <div className="flex min-h-screen flex-col">
-      <SyntheticRibbon />
       <main className="flex flex-1 items-center justify-center p-6">
         <section
           aria-labelledby="login-title"

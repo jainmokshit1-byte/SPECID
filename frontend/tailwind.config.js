@@ -1,4 +1,4 @@
-// Tokens from UI/UX Design Brief v1.1 sections 3 and 9. Components use these names, never raw hex.
+// Tokens from UI/UX Design Brief v1.2 sections 3 and 9. Components use these names, never raw hex.
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ["class"],
@@ -43,8 +43,8 @@ export default {
         micro: ["0.6875rem", { lineHeight: "0.875rem", fontWeight: "500" }],
       },
       borderRadius: { DEFAULT: "6px", chip: "4px" },
-      spacing: { sidebar: "232px", "sidebar-collapsed": "56px", topbar: "52px", bar: "28px" },
-      zIndex: { sidebar: "10", topbar: "20", drawer: "40", modal: "50", toast: "60", ribbon: "70" },
+      spacing: { sidebar: "220px", "sidebar-collapsed": "56px", topbar: "52px", footer: "24px" },
+      zIndex: { sidebar: "10", topbar: "20", drawer: "40", modal: "50", toast: "60" },
     },
   },
   plugins: [],

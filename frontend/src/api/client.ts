@@ -26,6 +26,7 @@ export interface Health {
   db: string;
   consent_mode: string;
   embeddings_enabled: boolean;
+  egress_guard: { enabled: boolean; installed: boolean };
 }
 
 /** API-32 GET /system/airgap (built in Phase 5). */
