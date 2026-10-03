@@ -1,6 +1,6 @@
 # PROGRESS
 
-Current phase: **Phase 3 · Auth, RBAC and audit — done** (gate PASS, see below). Phase 2 done (gate PASS). Phase 1 done with 1 criterion PENDING (two laptops). Next: Phase 4 · Core engine (awaiting approval of its plan).
+Current phase: **Phase 4 · Core engine — done** (gate G1 PASS locally; GitHub CI run on the pushed commit to be confirmed, see below). Phases 2 and 3 done (gate PASS). Phase 1 done with 1 criterion PENDING (two laptops). Next: Phase 5 · Data, runs, AI channels, air-gap (awaiting approval of its plan).
 
 Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.5 P0**. Deviations: [docs/DECISIONS.md](docs/DECISIONS.md).
 
@@ -11,6 +11,7 @@ Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.
 | Q-01 | Do the 2026 finale rules allow code written before the event? | **Open.** Treated as a preparation build |
 | Q-02 | Finale duration, team size, venue hardware, internet | **Open.** Assume 36 h and a team of 6 |
 | Q-03 | App Flow §2 says `/registry` is for "everyone except INTEGRATOR (API only)", but §3.2 shows INTEGRATOR the Registry item with the Codes and Search tabs. Which wins? (§2 also gives `/templates` to everyone while §3.2 hides Rules from INTEGRATOR; hiding is the stricter choice, so that one is harmless) | **Resolved 2026-10-03 (DEC-19): §3.2 wins.** INTEGRATOR gets read-only `/registry`, `/registry/:cnmc` and `/search`; applied in Phase 6 with S8 (task below) |
+| Q-04 | PRD 9.5 says IDENTICAL needs MPN **and manufacturer both present** and equal (case-insensitive); the Appendix C `decide` counts two missing makers as equal and compares MPNs with case | **Resolved 2026-10-03 (DEC-26): PRD 9.5 wins** (DEV-5) |
 
 ## Standing decisions that affect later phases
 
@@ -21,8 +22,15 @@ Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.
 - **Auth and audit (Phase 3):** every new endpoint declares `require(Action.X)` from `security/permissions.py` and gets a row in `ENDPOINTS` in `tests/api/test_rbac.py` (the guard test fails otherwise). Every state change calls `services/audit.record()` in the same transaction; the router commits.
 - **No invented numbers (DEC-16):** Home cards show counts only when they come from data (S5/S18 in Phase 6).
 - **Seed content (DEC-13):** gasket v1 is DRAFT; UNSPSC_MAP v1 is empty until a code is verified with a source note; `RunConfig` defaults arrive with `settings.RunDefaults` in Phase 5.
+- **Reference conformance (DEC-21, 24, 26):** `tests/reference/specid_ref.py` stays byte-identical to PRD Appendix C; `core/` may differ from it only by DEV-1 … DEV-5 (`DEVIATIONS` in `tests/reference/test_conformance.py`). A new difference needs a DEC row and an allowlist entry with a narrow predicate and a planted-difference test. Golden files under `backend/tests/golden` are never edited to make a test pass (`git diff 2f8d9da -- backend/tests/golden` is empty).
+- **Engine entry points (Phase 4):** `extract(text, mpn, maker, *, dictionary, model, threshold)`, `decide(a, b, templates, criticality)`; templates and dictionary from `core.templates.load_templates / load_dictionary` (the API holds them in `app.state.templates`). Synthetic data: `make demo-data` → `data/synthetic/seed-7` (3,023 records; only `manifest.json` is committed).
 
 ## Tasks added to later phases
+
+### Phase 5 (in addition to the Implementation Plan's Phase 5 tasks)
+- [ ] **Harden FASTENER and MOTOR** extraction (DEC-20; the extractors exist since Phase 4)
+- [ ] **Known extraction misses on seed-7** (decide each with a DEC and, if `core/` then differs from Appendix C, a new DEV): style B faces `RAISED FACE` / `FLAT FACE` are not read (largest abstention cause on undamaged text; candidate: dictionary v2 entries `RAISED FACE` → `RF`, `FLAT FACE` → `FF`); `STD` with an unknown size compares as CONFLICT against `40` instead of unknown (a false veto, the safe direction)
+- [ ] **Services around the engine:** store evidence without `MISSING_BOTH` rows (TR-DAT-05); with `AUTO_ELIGIBLE_ENABLED=false` (DEC-09) the run stores `AUTO_ELIGIBLE` routes as `REVIEW`; load the category model into the `classify` hook (`CategoryModel.predict`, TRD 4.3)
 
 ### Phase 9 (in addition to the Implementation Plan's Phase 9 tasks)
 - [ ] **"Stay signed in" toast** 10 min before the 8 h token expiry, with a re-login dialog that keeps the page (App Flow 4.2; DEC-17)
@@ -156,3 +164,32 @@ Stack rebuilt with `make up` (Git Bash with WinGet `make`), then `make seed` (0 
 - Every request does one primary-key lookup of the user (so disabling takes effect at once). This is fine at prototype scale.
 - The API still connects as the DB owner (DEC-12, Phase 8). That is why the tamper test can disable the trigger; `specid_app` cannot (Appendix B, already tested).
 - Sidebar badges (Review, Consents) arrive with S5/S18 in Phase 6. The run selector arrives with runs in Phase 5.
+
+## Phase 4 · Core engine (gate G1)
+
+### Done
+- **T0 tests first (red, `2f8d9da`)**: PRD Appendix D §1–§7 ported to pytest (DEC-22): 25 golden cases in `backend/tests/golden/*.yaml` (TRD Appendix K format), property tests T-P1–T-P5 and T-C (hypothesis, 500 examples; `HYPOTHESIS_PROFILE=nightly` gives 5,000), signature tests T-S1–T-S4 and T-S6, architecture test TR-TST-12, and `tests/reference/specid_ref.py` = Appendix C byte for byte. Red run: 107 failed, all `ModuleNotFoundError: app.core.*`. §8 (egress guard, T-S5) moves to Phase 5
+- **Conformance judge** (`tests/reference/test_conformance.py`): `core/` equals the reference on extraction, verdict, route, reasons, every evidence row, short text, `text_sim`, both baselines, CNMC and MPN/maker, on the golden texts, the 1,500 Appendix D renders, hypothesis text (vocabulary, printable ASCII, any text) and every seed-7 truth pair, except **DEV-1** short text without missing parts, **DEV-2** symmetric NUT rule, **DEV-3** NFKC (non-ASCII / non-printing input only), **DEV-4** rules repeated to a fixed point (max 8 passes, max observed 4), **DEV-5** IDENTICAL per PRD 9.5. Each has a narrow predicate and a planted-difference test
+- **`core/`** (pure; mypy strict clean): `types`, `normalise` (PRD 9.2 rules in Appendix C order, dictionary expansions, NFKC, fixed point; cap warning logs only the SHA-256), `units` (B.1, B.2, HP, UoM), `templates` (single `Template` model, `<file>:<line>` errors, `load_dictionary`), `classify` (rules, then the model hook), `extract` (all six extractors, DEC-20; a note on every conversion; `supply_attribute`), `decide` (veto → unknown-state → route; item criticality; `same_make`; `impact_preview`), `confidence`, `cluster` (blocked edges, size cap 200, priority, cohesion), `cnmc`, `shortdesc` (short and long text), `radar`, `baselines`
+- **API**: templates load right after migrations; invalid YAML aborts startup; `/health` reports `"templates": {"fastener":1,"flange":1,"gasket":1,"motor":1,"pipe":1,"valve":1}` (DEC-23; closes DEC-05 for templates)
+- **Generator v0** (`app/eval/generator.py`, DEC-27): seed 7, `n_entities = 1200` (DEC-09) → **3,023 records** (A 993 · B 1,019 · C 1,011), 1,499 entities, truth pairs 2,166 EQUIVALENT + 1,217 NOT_EQUIVALENT_HARD; 6 files, **902,033 bytes**; generated in **0.15 s**; same seed → identical SHA-256 of all 6 files (manifest included). `make demo-data` writes it. A first run had 41 pipe hard negatives that were renamed copies of their base (non-canonical `STD` schedule in the truth); fixed and covered by `test_truth_attributes_are_canonical` and `test_hard_negatives_with_clean_text_are_never_merged`
+- **CLI** `python -m app.cli`: `generate`, `decide --file`, `decide --a/--b` (evidence card), `extract`
+- Decisions DEC-20 … DEC-27. Test totals: backend **512 passed** (was 227), `core/` coverage **97.95%**; frontend 115 (unchanged). `BUILT_PATHS` unchanged (no screens in this phase)
+
+### Gate G1: "Done when" criteria (Implementation Plan §4 Phase 4 and §6)
+| Criterion | Result | Evidence |
+|---|---|---|
+| `make test` | PASS | `== backend job ==` ruff ✔, black ✔ (87 files), `512 passed, 1 warning in 103.45s`, `Required test coverage of 70% reached. Total coverage: 97.95%`; `== frontend job ==` `Tests 115 passed (115)`, build ✔; `== local CI: all passed ==`. `make lint`: mypy strict `Success: no issues found in 14 source files` |
+| 25 golden tests pass | PASS | `pytest tests/golden -k "test_golden_core or 25_appendix"` → `26 passed` (25 cases + the count check; they also pass against the verbatim reference). `git diff 2f8d9da -- backend/tests/golden` → 0 bytes |
+| Symmetry and veto property tests pass | PASS | `pytest -v tests/property`: T-P1 veto (specs and text), T-P3 symmetry (specs and text), T-P2 clusters, T-P4 ×5 strategies, T-P5 ×2, T-C ×3, Appendix D §3 smoke — 16 PASSED |
+| Every evidence row has `rule` and `rule_text` | PASS | T-S6 (`tests/unit/test_appendix_d.py`, 16 passed: rule IDs `CATEGORY.attr`, `rule_text` equals the template YAML or the level default); CLI on seed-7: `Evidence rows: 18976; rows without a rule ID or rule text: 0` |
+| CLI prints a verdict mix on generator output | PASS | `docker compose exec api python -m app.cli decide --file data/synthetic/seed-7` → 3,383 truth pairs in 0.76 s. EQUIVALENT truth: IDENTICAL 108, EQUIVALENT 789, INSUFFICIENT_DATA 1,265, NOT_EQUIVALENT 4. NOT_EQUIVALENT_HARD truth: **IDENTICAL 0, EQUIVALENT 0**, INSUFFICIENT_DATA 250, NOT_EQUIVALENT 967. Routes, evidence-row count and Look-alike Guard counts printed. Truth pairs only; not an evaluation result (SYNTHETIC banner) |
+| `pytest -m "not ml"` green in CI | PASS locally (`ci_local.sh` runs `pytest -m "not ml"` with the coverage gate); **GitHub run on the pushed commit: to be confirmed** (repo private, `gh` not installed here) | |
+| Architecture: `core/` imports nothing from services, API, DB (TR-TST-12) | PASS | `test_core_imports_nothing_forbidden` and `test_checker_catches_planted_imports` PASSED |
+
+### Pending / known issues
+- **GitHub CI** on the pushed `main` to be confirmed; tag `gate-1` (TRD TR-CI-03) after that.
+- **Abstentions on seed-7** are high for true-equivalent pairs (1,265 of 2,166). Main causes: core attributes dropped on purpose by the generator (justified), style A cut at 40 characters, and the style B face words the Appendix C extractor does not read (task in Phase 5). The 4 true-equivalent pairs that were vetoed are `STD` with an unknown size (2) and the typo `INDUCTINO` (2): false vetoes, never false merges.
+- `core/normalise` logs one structlog warning if the 8-pass cap is reached (DEC-24): the only side effect in `core/`.
+- **To be aligned in `impdocs/`** (not edited): Implementation Plan Phase 4/5 task lists (DEC-20); PRD 9.2 and TRD TR-MOD-01 "rules repeat until the output stops changing (max 8 passes)" (DEC-24); TRD 4.2 `uom_canonical(raw, dictionary)` (DEC-23).
+- Starlette prints the known `httpx` deprecation warning in the TestClient (harmless; versions frozen).
