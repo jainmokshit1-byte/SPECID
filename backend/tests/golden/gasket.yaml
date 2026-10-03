@@ -1,0 +1,16 @@
+# Golden cases (TRD Appendix K format). Source: PRD v0.5 Appendix D (dossier A4.3 pairs and edge cases).
+# Never edit a case to make it pass: fix core/ or ask (CLAUDE.md hard rule 3).
+# decisive = the attribute in CONFLICT (NOT_EQUIVALENT) or the core attribute not verifiable (INSUFFICIENT_DATA), DEC-22.
+template: gasket
+cases:
+  - a: "GASKET SPIRAL WND 4IN CL150 SS316/GRAF"
+    b: "GASKET SPIRAL WND 4IN CL300 SS316/GRAF"
+    expected_verdict: NOT_EQUIVALENT
+    expected_route: NONE
+    decisive: pressure_class
+    note: "dossier pair: near-miss on class"
+  - a: "GASKET SPIRAL WND 4IN CL150 SS316/GRAF"
+    b: "SPIRAL WOUND GASKET 100NB 150# 316SS GRAPHITE"
+    expected_verdict: EQUIVALENT
+    expected_route: REVIEW          # critical class
+    note: "dossier pair: WND, GRAF, 316SS"

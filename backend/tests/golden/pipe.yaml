@@ -1,0 +1,33 @@
+# Golden cases (TRD Appendix K format). Source: PRD v0.5 Appendix D (dossier A4.3 pairs and edge cases).
+# Never edit a case to make it pass: fix core/ or ask (CLAUDE.md hard rule 3).
+# decisive = the attribute in CONFLICT (NOT_EQUIVALENT) or the core attribute not verifiable (INSUFFICIENT_DATA), DEC-22.
+template: pipe
+cases:
+  - a: "PIPE SMLS 6IN SCH40 A106 GR.B"
+    b: "PIPE SMLS 6IN SCH80 A106 GR.B"
+    expected_verdict: NOT_EQUIVALENT
+    expected_route: NONE
+    decisive: schedule
+    note: "dossier pair: near-miss on schedule"
+  - a: "PIPE SMLS 6IN SCH40 A106 GR.B"
+    b: "PIPE 150NB SCH 40 A106 GRADE B SEAMLESS"
+    expected_verdict: EQUIVALENT
+    expected_route: REVIEW          # critical class
+    note: "dossier pair: NB and wording"
+  - a: "PIPE 6IN STD A106 GR B SEAMLESS"
+    b: "PIPE SMLS 150NB SCH40 A106B"
+    expected_verdict: EQUIVALENT
+    expected_route: REVIEW          # critical class
+    note: "edge case: STD = SCH40 up to NPS 10"
+  - a: "PIPE 12IN STD A106B"
+    b: "PIPE 12IN SCH40 A106B"
+    expected_verdict: NOT_EQUIVALENT
+    expected_route: NONE
+    decisive: schedule
+    note: "edge case: STD is not SCH40 at NPS 12 (SME to verify)"
+  - a: "PIPE 7IN SCH40 A106B"
+    b: "PIPE 7IN SCH40 A106B"
+    expected_verdict: INSUFFICIENT_DATA
+    expected_route: REVIEW
+    decisive: size_dn
+    note: "edge case: non-standard size is not guessed"

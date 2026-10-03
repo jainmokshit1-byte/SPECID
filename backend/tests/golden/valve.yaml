@@ -1,0 +1,34 @@
+# Golden cases (TRD Appendix K format). Source: PRD v0.5 Appendix D (dossier A4.3 pairs and edge cases).
+# Never edit a case to make it pass: fix core/ or ask (CLAUDE.md hard rule 3).
+# decisive = the attribute in CONFLICT (NOT_EQUIVALENT) or the core attribute not verifiable (INSUFFICIENT_DATA), DEC-22.
+template: valve
+cases:
+  - a: "VALVE GATE 4IN CL150 A216 WCB FLGD RF"
+    b: "VALVE GATE 4IN CL300 A216 WCB FLGD RF"
+    expected_verdict: NOT_EQUIVALENT
+    expected_route: NONE
+    decisive: pressure_class
+    note: "dossier pair: near-miss on class"
+  - a: "VALVE GATE 4IN CL150 A216 WCB FLGD RF"
+    b: "GV 100NB 150# WCB RF FLANGED"
+    expected_verdict: EQUIVALENT
+    expected_route: REVIEW          # critical class
+    note: "dossier pair: unit and abbreviation conversion"
+  - a: "VALVE GATE 4IN CL150 WCB FLANGED"
+    b: "VALVE GATE 4IN CL150 WCB FLANGED RF"
+    expected_verdict: INSUFFICIENT_DATA
+    expected_route: REVIEW
+    decisive: end_connection
+    note: "edge case: face unknown on one side"
+  - a: "VALVE GATE 4IN CL150 WCB FLANGED RF"
+    b: "VALVE GLOBE 4IN CL150 WCB FLANGED RF"
+    expected_verdict: NOT_EQUIVALENT
+    expected_route: NONE
+    decisive: valve_type
+    note: "edge case: gate vs globe"
+  - a: "VALVE GATE 4IN CL150 WCB FLANGED RF API 600"
+    b: "VALVE GATE 4IN CL150 WCB FLANGED RF API 6D"
+    expected_verdict: NOT_EQUIVALENT
+    expected_route: NONE
+    decisive: design_standard
+    note: "edge case: extended attribute conflict vetoes (API 600 vs API 6D)"

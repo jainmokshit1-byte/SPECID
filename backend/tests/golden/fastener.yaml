@@ -1,0 +1,26 @@
+# Golden cases (TRD Appendix K format). Source: PRD v0.5 Appendix D (dossier A4.3 pairs and edge cases).
+# Never edit a case to make it pass: fix core/ or ask (CLAUDE.md hard rule 3).
+# decisive = the attribute in CONFLICT (NOT_EQUIVALENT) or the core attribute not verifiable (INSUFFICIENT_DATA), DEC-22.
+template: fastener
+cases:
+  - a: "BOLT HEX M16X80 GR8.8 ZN"
+    b: "BOLT HEX M16X90 GR8.8 ZN"
+    expected_verdict: NOT_EQUIVALENT
+    expected_route: NONE
+    decisive: length_mm
+    note: "dossier pair: near-miss on length"
+  - a: "BOLT HEX M16X80 GR8.8 ZN"
+    b: "BOLT, HEX HD, M16 X 80, 8.8, ZINC"
+    expected_verdict: EQUIVALENT
+    expected_route: AUTO_ELIGIBLE   # non-critical class, no flags
+    note: "dossier pair: ZN = ZINC, HD = HEAD"
+  - a: "NUT HEX M20 2H"
+    b: "HEX NUT M20 A194 2H"
+    expected_verdict: EQUIVALENT
+    expected_route: AUTO_ELIGIBLE   # non-critical class (Appendix D route check)
+    note: "edge case: NUT has no length; A194 consumed with the grade"
+  - a: "STUD BOLT M20X120 B7 PTFE"
+    b: "STUD M20 X 120 A193 B7 PTFE"
+    expected_verdict: EQUIVALENT
+    expected_route: AUTO_ELIGIBLE   # non-critical class, no flags
+    note: "edge case: A193 consumed with the grade"

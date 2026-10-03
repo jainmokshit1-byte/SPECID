@@ -1,0 +1,27 @@
+# Golden cases (TRD Appendix K format). Source: PRD v0.5 Appendix D (dossier A4.3 pairs and edge cases).
+# Never edit a case to make it pass: fix core/ or ask (CLAUDE.md hard rule 3).
+# decisive = the attribute in CONFLICT (NOT_EQUIVALENT) or the core attribute not verifiable (INSUFFICIENT_DATA), DEC-22.
+template: motor
+cases:
+  - a: "MOTOR AC SQ 100KW 1500RPM 4P"
+    b: "MOTOR AC SQ 110KW 1500RPM 4P"
+    expected_verdict: NOT_EQUIVALENT
+    expected_route: NONE
+    decisive: power_kw
+    note: "dossier pair: near-miss on power"
+  - a: "MOTOR AC SQ 100KW 1500RPM 4P"
+    b: "AC INDUCTION MOTOR SQ CAGE 100 KW 4 POLE 1500 RPM"
+    expected_verdict: EQUIVALENT
+    expected_route: REVIEW          # critical class
+    note: "dossier pair: wording"
+  - a: "MOTOR AC IND 125HP 4P"
+    b: "MOTOR AC SQ 93KW 4 POLE"
+    expected_verdict: EQUIVALENT
+    expected_route: REVIEW          # critical class
+    note: "edge case: HP -> kW within 1%"
+  - a: "MOTOR AC SQ 100KW 4P"
+    b: "MOTOR AC SQ 100KW 6P"
+    expected_verdict: NOT_EQUIVALENT
+    expected_route: NONE
+    decisive: poles
+    note: "edge case: 4 poles vs 6 poles"

@@ -1,0 +1,22 @@
+# Golden cases (TRD Appendix K format). Source: PRD v0.5 Appendix D (dossier A4.3 pairs and edge cases).
+# Never edit a case to make it pass: fix core/ or ask (CLAUDE.md hard rule 3).
+# decisive = the attribute in CONFLICT (NOT_EQUIVALENT) or the core attribute not verifiable (INSUFFICIENT_DATA), DEC-22.
+template: flange
+cases:
+  - a: "FLANGE WN 4IN CL150 RF A105"
+    b: "FLANGE WN 4IN CL150 RF A182 F316"
+    expected_verdict: NOT_EQUIVALENT
+    expected_route: NONE
+    decisive: material
+    note: "dossier pair: near-miss on material family"
+  - a: "FLANGE WN 4IN CL150 RF A105"
+    b: "WELD NECK FLANGE 100NB 150# RF ASTM A105"
+    expected_verdict: EQUIVALENT
+    expected_route: REVIEW          # critical class
+    note: "dossier pair: WELD NECK, NB, 150#"
+  - a: "FLANGE WN 4IN CL150 RF SS316"
+    b: "FLANGE WN 4IN CL150 RF A182 F316"
+    expected_verdict: INSUFFICIENT_DATA
+    expected_route: REVIEW
+    decisive: material
+    note: "edge case: generic vs specific material is PARTIAL"
