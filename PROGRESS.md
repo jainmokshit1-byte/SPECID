@@ -1,6 +1,6 @@
 # PROGRESS
 
-Current phase: **Phase 4 · Core engine — done** (gate G1 PASS locally; GitHub CI run on the pushed commit to be confirmed, see below). Phases 2 and 3 done (gate PASS). Phase 1 done with 1 criterion PENDING (two laptops). Next: Phase 5 · Data, runs, AI channels, air-gap (awaiting approval of its plan).
+Current phase: **Phase 4 · Core engine — done** (gate G1 PASS; tag `gate-1` on `88d8b14`). Phases 2 and 3 done (gate PASS). Phase 1 done with 1 criterion PENDING (two laptops). Next: Phase 5 · Data, runs, AI channels, air-gap (awaiting approval of its plan).
 
 Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.5 P0**. Deviations: [docs/DECISIONS.md](docs/DECISIONS.md).
 
@@ -184,11 +184,11 @@ Stack rebuilt with `make up` (Git Bash with WinGet `make`), then `make seed` (0 
 | Symmetry and veto property tests pass | PASS | `pytest -v tests/property`: T-P1 veto (specs and text), T-P3 symmetry (specs and text), T-P2 clusters, T-P4 ×5 strategies, T-P5 ×2, T-C ×3, Appendix D §3 smoke — 16 PASSED |
 | Every evidence row has `rule` and `rule_text` | PASS | T-S6 (`tests/unit/test_appendix_d.py`, 16 passed: rule IDs `CATEGORY.attr`, `rule_text` equals the template YAML or the level default); CLI on seed-7: `Evidence rows: 18976; rows without a rule ID or rule text: 0` |
 | CLI prints a verdict mix on generator output | PASS | `docker compose exec api python -m app.cli decide --file data/synthetic/seed-7` → 3,383 truth pairs in 0.76 s. EQUIVALENT truth: IDENTICAL 108, EQUIVALENT 789, INSUFFICIENT_DATA 1,265, NOT_EQUIVALENT 4. NOT_EQUIVALENT_HARD truth: **IDENTICAL 0, EQUIVALENT 0**, INSUFFICIENT_DATA 250, NOT_EQUIVALENT 967. Routes, evidence-row count and Look-alike Guard counts printed. Truth pairs only; not an evaluation result (SYNTHETIC banner) |
-| `pytest -m "not ml"` green in CI | PASS locally (`ci_local.sh` runs `pytest -m "not ml"` with the coverage gate); **GitHub run on the pushed commit: to be confirmed** (repo private, `gh` not installed here) | |
+| `pytest -m "not ml"` green in CI | PASS | GitHub Actions run [37140099891](https://github.com/jainmokshit1-byte/SPECID/actions/runs/37140099891) on `88d8b14`: green (reported by the user). The earlier run on `0427070` failed at lint (see below). Locally `ci_local.sh` runs the same `pytest -m "not ml"` with the coverage gate |
 | Architecture: `core/` imports nothing from services, API, DB (TR-TST-12) | PASS | `test_core_imports_nothing_forbidden` and `test_checker_catches_planted_imports` PASSED |
 
 ### Pending / known issues
-- **GitHub CI** on `0427070` failed at `ruff check` (I001, one unsorted import block in `tests/unit/test_appendix_d.py`) that local CI had missed: `ruff` reused a stale `.ruff_cache` inside the bind-mounted `backend/`. Fixed, and `ci_local.sh` now runs `ruff check --no-cache` and `mypy --cache-dir=/dev/null`, so local lint sees what a fresh GitHub checkout sees. GitHub run on the fix to be confirmed; tag `gate-1` (TRD TR-CI-03) after that.
+- **GitHub CI** on `0427070` failed at `ruff check` (I001, one unsorted import block in `tests/unit/test_appendix_d.py`) that local CI had missed: `ruff` reused a stale `.ruff_cache` inside the bind-mounted `backend/`. Fixed, and `ci_local.sh` now runs `ruff check --no-cache` and `mypy --cache-dir=/dev/null`, so local lint sees what a fresh GitHub checkout sees. GitHub run 37140099891 on `88d8b14` is green; tag `gate-1` (TRD TR-CI-03) is on `88d8b14`.
 - **Abstentions on seed-7** are high for true-equivalent pairs (1,265 of 2,166). Main causes: core attributes dropped on purpose by the generator (justified), style A cut at 40 characters, and the style B face words the Appendix C extractor does not read (task in Phase 5). The 4 true-equivalent pairs that were vetoed are `STD` with an unknown size (2) and the typo `INDUCTINO` (2): false vetoes, never false merges.
 - `core/normalise` logs one structlog warning if the 8-pass cap is reached (DEC-24): the only side effect in `core/`.
 - **To be aligned in `impdocs/`** (not edited): Implementation Plan Phase 4/5 task lists (DEC-20); PRD 9.2 and TRD TR-MOD-01 "rules repeat until the output stops changing (max 8 passes)" (DEC-24); TRD 4.2 `uom_canonical(raw, dictionary)` (DEC-23).
