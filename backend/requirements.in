@@ -1,0 +1,20 @@
+# Core runtime dependencies (TRD v1.1 section 3). Compiled to requirements.lock with pip-compile.
+fastapi>=0.110
+uvicorn>=0.29
+python-multipart
+pydantic>=2.6
+pydantic-settings
+sqlalchemy>=2.0
+alembic>=1.13
+psycopg[binary]>=3.1
+rapidfuzz>=3
+rank-bm25>=0.2.2
+numpy
+scikit-learn>=1.4
+joblib
+openpyxl
+charset-normalizer
+PyYAML
+PyJWT>=2.8
+bcrypt>=4.1
+structlog

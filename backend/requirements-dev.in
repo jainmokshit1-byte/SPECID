@@ -1,0 +1,10 @@
+# Test and lint tools (TRD v1.1 sections 13, 15). Compiled to requirements-dev.txt.
+-c requirements.lock
+pytest
+pytest-cov
+hypothesis
+httpx
+ruff
+black
+mypy
+pip-tools

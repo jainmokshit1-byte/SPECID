@@ -1,0 +1,6 @@
+# ML dependencies (TRD v1.1 section 3, TD-05): CPU-only torch from the PyTorch CPU index.
+# Compiled to requirements-ml.lock with pip-compile, constrained by the core lock.
+-c requirements.lock
+torch
+sentence-transformers>=2.6
+faiss-cpu>=1.7.4
