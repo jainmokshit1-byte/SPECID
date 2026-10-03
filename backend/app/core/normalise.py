@@ -1,14 +1,22 @@
 """Normaliser (PRD 9.2, FR-201, TRD TR-MOD-01).
 
-The ordered rules of PRD 9.2 as in the reference `normalise` (PRD Appendix C). Whole-word
-expansions come from the versioned dictionary, not from literals. Before the rules, Unicode
-NFKC is applied and non-printing characters are removed (TR-MOD-01; DEC-21 DEV-3).
+The ordered rules of PRD 9.2 as in the reference `normalise` (PRD Appendix C), in the same
+order. Whole-word expansions come from the versioned dictionary, not from literals. Before the
+rules, Unicode NFKC is applied and non-printing characters are removed (TR-MOD-01; DEC-21 DEV-3).
+
+One pass of the rules is not idempotent on every input (`1/2 #` -> `1/CL2` -> `1 CL2`), so the
+pass repeats until the output stops changing, at most `MAX_PASSES` times (DEC-24 DEV-4).
 """
 
+import hashlib
 import re
 import unicodedata
 
+import structlog
+
 from app.core.types import Dictionary
+
+MAX_PASSES = 8
 
 _QUOTES = re.compile(r'["“”]')
 _PUNCT = re.compile(r"[,;()]")
@@ -31,7 +39,7 @@ def _clean(text: str) -> str:
     return unicodedata.normalize("NFKC", t.upper())
 
 
-def normalise(text: str, dictionary: Dictionary) -> str:
+def _one_pass(text: str, dictionary: Dictionary) -> str:
     t = _clean(text)  # rule 1 (upper-case) included
     t = _QUOTES.sub(" IN ", t)  # rule 2
     t = _PUNCT.sub(" ", t)
@@ -47,3 +55,28 @@ def normalise(text: str, dictionary: Dictionary) -> str:
     for abbr, expansion in dictionary.abbreviations.items():  # rule 9
         t = re.sub(rf"\b{re.escape(abbr)}\b", expansion, t)
     return _SPACE.sub(" ", t).strip()  # rule 10
+
+
+def normalise_passes(text: str, dictionary: Dictionary) -> tuple[str, int]:
+    """(normalised text, passes run). The last pass is the one that changed nothing.
+
+    If the output still changes after `MAX_PASSES` passes, the last result is returned and a
+    warning is logged with the SHA-256 of the input (never the text itself).
+    """
+    t = _one_pass(text, dictionary)
+    for passes in range(2, MAX_PASSES + 1):
+        nxt = _one_pass(t, dictionary)
+        if nxt == t:
+            return t, passes
+        t = nxt
+    structlog.get_logger(__name__).warning(
+        "normalise_max_passes_reached",
+        input_sha256=hashlib.sha256(text.encode("utf-8", "surrogatepass")).hexdigest(),
+        passes=MAX_PASSES,
+        dictionary_version=dictionary.version,
+    )
+    return t, MAX_PASSES
+
+
+def normalise(text: str, dictionary: Dictionary) -> str:
+    return normalise_passes(text, dictionary)[0]

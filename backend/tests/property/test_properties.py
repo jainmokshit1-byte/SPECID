@@ -5,13 +5,14 @@ T-P5 short text <= 40 characters or none, T-C CNMC check digit.
 """
 
 import random
+import string
 from itertools import combinations
 from typing import Any
 
 from hypothesis import given
 from hypothesis import strategies as st
 
-from tests.coreenv import D, E, N, spec
+from tests.coreenv import D, E, N, dictionary, spec
 from tests.property.strategies import CATEGORIES, attrs_for, criticality, spec_pair, texts
 
 POSITIVE = ("EQUIVALENT", "IDENTICAL")
@@ -77,15 +78,42 @@ def test_t_p2_no_conflict_inside_a_cluster(rows: list[dict[str, Any]], data: Any
             assert verdict[(i, j)] != "NOT_EQUIVALENT", (c, i, j)
 
 
-# ---- T-P4 idempotent normaliser (FR-201, TR-MOD-01) ----
+# ---- T-P4 idempotent normaliser (FR-201, TR-MOD-01); pass cap never reached (DEC-24) ----
+PRINTABLE_ASCII = st.text(alphabet=string.printable)
+PRINTABLE_UNICODE = st.text(st.characters(exclude_categories=("Cc", "Cf", "Cs", "Co", "Cn")))
+
+
+def _idempotent_below_cap(x: str) -> None:
+    from app.core.normalise import MAX_PASSES, normalise_passes
+
+    once, passes = normalise_passes(x, dictionary())
+    assert passes < MAX_PASSES, (x, passes)
+    assert N(once) == once
+
+
 @given(st.text())
 def test_t_p4_normaliser_is_idempotent(x: str) -> None:
-    assert N(N(x)) == N(x)
+    _idempotent_below_cap(x)
 
 
 @given(texts)
 def test_t_p4_normaliser_is_idempotent_on_vocabulary(x: str) -> None:
-    assert N(N(x)) == N(x)
+    _idempotent_below_cap(x)
+
+
+@given(PRINTABLE_ASCII)
+def test_t_p4_normaliser_is_idempotent_on_printable_ascii(x: str) -> None:
+    _idempotent_below_cap(x)
+
+
+@given(PRINTABLE_UNICODE)
+def test_t_p4_normaliser_is_idempotent_on_printable_unicode(x: str) -> None:
+    _idempotent_below_cap(x)
+
+
+@given(st.lists(st.sampled_from(sorted(set(string.printable) | {"1/2", "#", "GR.", "ADE"}))))
+def test_t_p4_normaliser_is_idempotent_on_rule_fragments(parts: list[str]) -> None:
+    _idempotent_below_cap(" ".join(parts) if len(parts) % 2 else "".join(parts))
 
 
 # ---- T-P5 short text <= 40 characters or none (FR-901) ----

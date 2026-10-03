@@ -1,9 +1,12 @@
 """FR-201, FR-202, FR-205 (TRD TR-MOD-01, TR-MOD-02): normaliser rules and unit tables."""
 
+import hashlib
+
 import pytest
 import yaml
+from structlog.testing import capture_logs
 
-from app.core.normalise import normalise
+from app.core.normalise import MAX_PASSES, normalise, normalise_passes
 from app.core.types import Dictionary
 from app.core.units import (
     DN_NPS,
@@ -163,3 +166,45 @@ def test_uom_aliases_of_appendix_i() -> None:
 def test_ambiguous_and_unknown_uom() -> None:
     assert uom_canonical("MT", DICT) == (None, True)  # metre or metric tonne: never mapped
     assert uom_canonical("BAG", DICT) == (None, False)
+
+
+# DEC-24 (DEV-4): the rules repeat until the output stops changing, at most MAX_PASSES times
+@pytest.mark.parametrize(
+    ("raw", "expected", "passes"),
+    [
+        ("1/2 #", "1 CL2", 3),  # one pass gives 1/CL2 (rule 3 runs before rule 6)
+        ("GR.ADE B", "GRB", 3),  # one pass gives GRADE B (rule 8)
+        ("GATE VALVE", "GATE VALVE", 2),  # idempotent input: one pass plus the check
+    ],
+)
+def test_rules_repeat_to_a_fixed_point(raw: str, expected: str, passes: int) -> None:
+    assert normalise_passes(raw, DICT) == (expected, passes)
+    assert normalise(expected, DICT) == expected
+
+
+def test_cap_is_never_reached_on_the_golden_texts() -> None:
+    from tests.golden.test_golden import CASES
+
+    texts = {t for p in CASES for t in (p.values[1]["a"], p.values[1]["b"])}
+    assert len(texts) > 30
+    assert max(normalise_passes(t, DICT)[1] for t in texts) < MAX_PASSES
+
+
+def test_cap_reached_returns_last_result_and_logs_only_a_hash() -> None:
+    growing = Dictionary(version=9, abbreviations={"A": "A A"})  # never stops changing
+    raw = "SECRET-PART A"
+    with capture_logs() as logs:
+        out, passes = normalise_passes(raw, growing)
+    assert passes == MAX_PASSES and out.startswith("SECRET-PART A A")
+    assert len(logs) == 1
+    event = logs[0]
+    assert event["event"] == "normalise_max_passes_reached" and event["log_level"] == "warning"
+    assert event["input_sha256"] == hashlib.sha256(raw.encode()).hexdigest()
+    assert event["passes"] == MAX_PASSES and event["dictionary_version"] == 9
+    assert all("SECRET" not in str(v) for v in event.values())  # never the raw text
+
+
+def test_no_warning_below_the_cap() -> None:
+    with capture_logs() as logs:
+        normalise("1/2 # GR.ADE B", DICT)
+    assert logs == []

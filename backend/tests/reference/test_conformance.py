@@ -1,6 +1,6 @@
 """core/ conforms to the verbatim PRD Appendix C reference, except allowlisted deviations.
 
-The allowlist is DEVIATIONS below; each entry is documented in DEC-21.
+The allowlist is DEVIATIONS below; each entry names the DEC that documents it (DEC-21, DEC-24).
 
 Compared on every corpus pair: extraction (category, stated attributes, notes, residual), the
 decision (verdict, route, reasons, every evidence row), the short text, text_sim, both
@@ -29,12 +29,14 @@ from tests.reference import specid_ref as R
 REPO = Path(__file__).resolve().parents[3]
 REF_FILE = Path(__file__).with_name("specid_ref.py")
 
-# The only differences allowed between core/ and the reference. Keys are cited in DEC-21.
+# The only differences allowed between core/ and the reference: key -> (decision, summary).
 DEVIATIONS = {
-    "DEV-1": "short_desc leaves out missing parts (the reference raises or writes None, ?IN)",
-    "DEV-2": "the NUT rule drops length_mm when either side is a nut (reference: side A only)",
-    "DEV-3": "the normaliser applies NFKC and drops non-printing characters first (TR-MOD-01)",
+    "DEV-1": ("DEC-21", "short_desc leaves out missing parts (reference raises or writes None)"),
+    "DEV-2": ("DEC-21", "NUT rule drops length_mm when either side is a nut (reference: A only)"),
+    "DEV-3": ("DEC-21", "normaliser applies NFKC and drops non-printing characters (TR-MOD-01)"),
+    "DEV-4": ("DEC-24", "normaliser repeats the rules to a fixed point (FR-201 idempotence)"),
 }
+REF_MAX_PASSES = 8  # the same cap as core/ (DEC-24)
 
 
 def _prd() -> Path | None:
@@ -61,9 +63,10 @@ def test_every_deviation_is_logged_in_decisions() -> None:
     log = next((p for p in candidates if p.exists()), None)
     if log is None:
         pytest.skip("docs/ not mounted")
-    dec21 = next(line for line in log.read_text("utf-8").splitlines() if "| DEC-21 |" in line)
-    for key in DEVIATIONS:
-        assert f"**{key}**" in dec21, key
+    rows = log.read_text("utf-8").splitlines()
+    for key, (dec, _) in DEVIATIONS.items():
+        row = next(line for line in rows if f"| {dec} |" in line)
+        assert f"**{key}**" in row, (key, dec)
 
 
 # ---- allowlist predicates ----
@@ -74,6 +77,25 @@ def _dev3(text: str) -> bool:
     and there is nothing to remove, so core/ must match the reference exactly.
     """
     return not text.isascii() or any(not ch.isprintable() and not ch.isspace() for ch in text)
+
+
+def _dev4(text: str) -> bool:
+    """DEV-4 applies only when the reference normaliser itself is not idempotent on `text`."""
+    once = R.normalise(text)
+    return R.normalise(once) != once
+
+
+def _ref_input(text: str) -> str:
+    """The text the reference is run on: `text`, or under DEV-4 the reference's own fixed point."""
+    if not _dev4(text):
+        return text
+    t = R.normalise(text)
+    for _ in range(REF_MAX_PASSES - 1):
+        nxt = R.normalise(t)
+        if nxt == t:
+            return t
+        t = nxt
+    raise AssertionError(f"reference fixed point not reached in {REF_MAX_PASSES} passes")
 
 
 def _dev1(ref_short: Any) -> bool:
@@ -142,16 +164,17 @@ def _short_ref(x: str) -> Any:
 def assert_conforms(x: str, y: str) -> None:
     if _dev3(x) or _dev3(y):
         return  # DEV-3
-    for t in (x, y):
-        assert _core_extraction(t) == _ref_extraction(t), t
-        if R.extract(t)["category"] is not None:
+    xr, yr = _ref_input(x), _ref_input(y)  # DEV-4: the reference runs on its fixed point
+    for t, tr in ((x, xr), (y, yr)):
+        assert _core_extraction(t) == _ref_extraction(tr), t
+        if R.extract(tr)["category"] is not None:
             from app.core.shortdesc import short_desc
 
-            ref_short = _short_ref(t)
+            ref_short = _short_ref(tr)
             if not _dev1(ref_short):
                 assert short_desc(E(t)) == ref_short, t
 
-    ra, rb = R.extract(x), R.extract(y)
+    ra, rb = R.extract(xr), R.extract(yr)
     ref, core = R.decide(ra, rb), D(E(x), E(y))
     assert (core.verdict, core.route) == (ref["verdict"], ref["route"]), (x, y)
     core_rows, ref_rows = _rows_core(core), _rows_ref(ref)
@@ -169,10 +192,12 @@ def assert_conforms(x: str, y: str) -> None:
     from app.core.radar import text_sim
 
     sim = text_sim(N(x), N(y))
-    assert sim == R.text_sim(x, y)
+    assert sim == R.text_sim(xr, yr)
     for tau in (0.55, 0.85):
-        assert b1(sim, tau) == R.baseline_b1(x, y, tau)
-        assert b2(sim, x, y, tau) == R.baseline_b2(x, y, tau)
+        assert b1(sim, tau) == R.baseline_b1(xr, yr, tau)
+        # B2 compares the numeric tokens of the RAW texts (PRD 10.2b), so x and y, not xr, yr
+        ref_b2 = R.text_sim(xr, yr) >= tau and R.numeric_tokens(x) == R.numeric_tokens(y)
+        assert b2(sim, x, y, tau) == ref_b2
 
 
 # ---- corpora ----
@@ -274,3 +299,29 @@ def test_cnmc_conforms() -> None:
         c = R.new_cnmc(seq)
         bad = c[:-1] + str((int(c[-1]) + 1) % 10)
         assert cnmc_valid(c) and not cnmc_valid(bad) and not R.cnmc_valid(bad)
+
+
+def test_dev4_applies_only_where_the_reference_is_not_idempotent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """DEV-4 excuses nothing on idempotent ASCII input; where it applies, core/ is still exact."""
+    assert _dev4("1/2 #") and _dev4("GR.ADE B")
+    assert _ref_input("1/2 #") == "1 CL2" and _ref_input("GR.ADE B") == "GRB"
+    golden = [t for pair in GOLDEN_PAIRS for t in pair]
+    assert not any(_dev4(t) for t in golden)  # the golden texts never need DEV-4
+    assert_conforms("PIPE 6IN SCH40 A106 GR.ADE B", "PIPE 6IN SCH40 A106B")  # DEV-4, exact
+    assert_conforms("VALVE 1/2 # GATE", "VALVE GATE 1/2 IN CL2")
+
+    real_e = E
+
+    def drifted(text: str, mpn: str | None = None, maker: str | None = None) -> Any:
+        s = real_e(text, mpn, maker)
+        return replace(s, residual=(*s.residual, "DRIFT"))
+
+    monkeypatch.setattr(sys.modules[__name__], "E", drifted)
+    idempotent = "VALVE GATE 4IN CL150 WCB FLANGED RF"
+    assert not _dev4(idempotent) and not _dev3(idempotent)
+    with pytest.raises(AssertionError):
+        assert_conforms(idempotent, idempotent)  # a planted difference is not excused
+    with pytest.raises(AssertionError):
+        assert_conforms("PIPE 6IN SCH40 A106 GR.ADE B", "PIPE 6IN SCH40 A106B")  # nor under DEV-4
