@@ -1,0 +1,51 @@
+// Tokens from UI/UX Design Brief v1.1 sections 3 and 9. Components use these names, never raw hex.
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: ["class"],
+  content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        bg: "var(--bg)",
+        surface: "var(--surface)",
+        "surface-2": "var(--surface-2)",
+        border: "var(--border)",
+        "border-strong": "var(--border-strong)",
+        text: "var(--text)",
+        muted: "var(--text-muted)",
+        primary: "var(--primary)",
+        "on-primary": "var(--on-primary)",
+        danger: "var(--danger)",
+        eq: { fg: "var(--eq-fg)", bg: "var(--eq-bg)" },
+        ne: { fg: "var(--ne-fg)", bg: "var(--ne-bg)" },
+        ins: { fg: "var(--ins-fg)", bg: "var(--ins-bg)" },
+        auto: { fg: "var(--auto-fg)", bg: "var(--auto-bg)" },
+        review: { fg: "var(--review-fg)", bg: "var(--review-bg)" },
+        ai: { fg: "var(--ai-fg)", bg: "var(--ai-bg)" },
+        flag: "var(--flag)",
+        user: "var(--user)",
+        synthetic: { fg: "var(--synthetic-fg)", bg: "var(--synthetic-bg)" },
+        airgap: { fg: "var(--airgap-fg)", bg: "var(--airgap-bg)", dot: "var(--airgap-dot)" },
+      },
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+      },
+      fontSize: {
+        display: ["1.875rem", { lineHeight: "2.25rem", fontWeight: "600" }],
+        h1: ["1.5rem", { lineHeight: "2rem", fontWeight: "600" }],
+        h2: ["1.25rem", { lineHeight: "1.75rem", fontWeight: "600" }],
+        h3: ["1rem", { lineHeight: "1.5rem", fontWeight: "600" }],
+        body: ["0.875rem", { lineHeight: "1.375rem" }],
+        table: ["0.8125rem", { lineHeight: "1.25rem" }],
+        mono: ["0.8125rem", { lineHeight: "1.25rem" }],
+        label: ["0.75rem", { lineHeight: "1rem", fontWeight: "500", letterSpacing: "0.02em" }],
+        micro: ["0.6875rem", { lineHeight: "0.875rem", fontWeight: "500" }],
+      },
+      borderRadius: { DEFAULT: "6px", chip: "4px" },
+      spacing: { sidebar: "232px", "sidebar-collapsed": "56px", topbar: "52px", bar: "28px" },
+      zIndex: { sidebar: "10", topbar: "20", drawer: "40", modal: "50", toast: "60", ribbon: "70" },
+    },
+  },
+  plugins: [],
+};
