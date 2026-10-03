@@ -27,10 +27,9 @@ Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.
 
 ## Tasks added to later phases
 
-### Phase 5 (in addition to the Implementation Plan's Phase 5 tasks)
-- [ ] **Harden FASTENER and MOTOR** extraction (DEC-20; the extractors exist since Phase 4)
-- [ ] **Known extraction misses on seed-7** (decide each with a DEC and, if `core/` then differs from Appendix C, a new DEV): style B faces `RAISED FACE` / `FLAT FACE` are not read (largest abstention cause on undamaged text; candidate: dictionary v2 entries `RAISED FACE` → `RF`, `FLAT FACE` → `FF`); `STD` with an unknown size compares as CONFLICT against `40` instead of unknown (a false veto, the safe direction)
-- [ ] **Services around the engine:** store evidence without `MISSING_BOTH` rows (TR-DAT-05); with `AUTO_ELIGIBLE_ENABLED=false` (DEC-09) the run stores `AUTO_ELIGIBLE` routes as `REVIEW`; load the category model into the `classify` hook (`CategoryModel.predict`, TRD 4.3)
+### Phase 5
+- Tasks: **Implementation Plan v1.2 §4, Phase 5** (it includes hardening FASTENER and MOTOR and the two Phase 4 findings, DEC-20).
+- Two engine rules the Plan does not spell out: store evidence without `MISSING_BOTH` rows (TRD TR-DAT-05); with `AUTO_ELIGIBLE_ENABLED=false` (DEC-09) a run stores `AUTO_ELIGIBLE` routes as `REVIEW`.
 
 ### Phase 9 (in addition to the Implementation Plan's Phase 9 tasks)
 - [ ] **"Stay signed in" toast** 10 min before the 8 h token expiry, with a re-login dialog that keeps the page (App Flow 4.2; DEC-17)
@@ -83,7 +82,6 @@ Done (App Flow v1.2 §3.1–3.3, §4.3; UI/UX brief v1.2 §1.4, §4, §6, §7.1)
 - React Router prints v7 future-flag warnings in tests (harmless).
 - Sidebar collapse to 56 px icons and stage mode: Phase 9.
 - Sidebar badges (Review, Consents), role filtering, a working run selector, user menu entries, breadcrumbs: later phases (DEC-05, DEC-10).
-- Doc alignment owed (DEC-10): PRD 11.2/§15/FR-1463/FR-1491, UI/UX brief §4/§6 footer, TRD TR-UI-04 names.
 - JetBrains Mono glyph check (`O0o l1I| 5S 8B` at 13 px, UI/UX brief 3.3) to be confirmed visually in Phase 9.
 
 ## Phase 2 · Database
@@ -158,7 +156,6 @@ Stack rebuilt with `make up` (Git Bash with WinGet `make`), then `make seed` (0 
 
 ### Pending / known issues
 - **Q-03** resolved by DEC-19 (App Flow §3.2 wins); the code change is a Phase 6 task.
-- **To be aligned in `impdocs/`** (not edited): PRD §8 (DEC-14 endpoints), Backend Schema §9.2 (`PASSWORD_CHANGED`, DEC-15).
 - The stack's audit log now holds the gate's events (logins, two `AUDIT_VERIFIED`, one `LOGIN_FAILED`); the chain is intact. `make seed` still writes no audit rows (DEC-11).
 - The "Stay signed in" toast is in Phase 9 (DEC-17). Until then an expired token sends the user to `/login?next=`.
 - Every request does one primary-key lookup of the user (so disabling takes effect at once). This is fine at prototype scale.
@@ -191,5 +188,4 @@ Stack rebuilt with `make up` (Git Bash with WinGet `make`), then `make seed` (0 
 - **GitHub CI** on `0427070` failed at `ruff check` (I001, one unsorted import block in `tests/unit/test_appendix_d.py`) that local CI had missed: `ruff` reused a stale `.ruff_cache` inside the bind-mounted `backend/`. Fixed, and `ci_local.sh` now runs `ruff check --no-cache` and `mypy --cache-dir=/dev/null`, so local lint sees what a fresh GitHub checkout sees. GitHub run 37140099891 on `88d8b14` is green; tag `gate-1` (TRD TR-CI-03) is on `88d8b14`.
 - **Abstentions on seed-7** are high for true-equivalent pairs (1,265 of 2,166). Main causes: core attributes dropped on purpose by the generator (justified), style A cut at 40 characters, and the style B face words the Appendix C extractor does not read (task in Phase 5). The 4 true-equivalent pairs that were vetoed are `STD` with an unknown size (2) and the typo `INDUCTINO` (2): false vetoes, never false merges.
 - `core/normalise` logs one structlog warning if the 8-pass cap is reached (DEC-24): the only side effect in `core/`.
-- **To be aligned in `impdocs/`** (not edited): Implementation Plan Phase 4/5 task lists (DEC-20); PRD 9.2 and TRD TR-MOD-01 "rules repeat until the output stops changing (max 8 passes)" (DEC-24); TRD 4.2 `uom_canonical(raw, dictionary)` (DEC-23).
 - Starlette prints the known `httpx` deprecation warning in the TestClient (harmless; versions frozen).
