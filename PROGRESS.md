@@ -1,6 +1,6 @@
 # PROGRESS
 
-Current phase: **Phase 3 · Auth, RBAC and audit — done** (gate PASS, see below). Phase 2 done (gate PASS). Phase 1 done with 2 criteria PENDING. Next: Phase 4 · Core engine (awaiting approval of its plan).
+Current phase: **Phase 3 · Auth, RBAC and audit — done** (gate PASS, see below). Phase 2 done (gate PASS). Phase 1 done with 1 criterion PENDING (two laptops). Next: Phase 4 · Core engine (awaiting approval of its plan).
 
 Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.5 P0**. Deviations: [docs/DECISIONS.md](docs/DECISIONS.md).
 
@@ -55,7 +55,7 @@ Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.
 | `http://127.0.0.1:8080` shows the shell with a working sidebar | PASS on this laptop (Windows 11, Docker 29.8.1) | All 26 App Flow routes (+ an unknown path, which renders the 404 page) return 200 through nginx `try_files`; headless Chromium at 1366×768 rendered the shell and clicking sidebar "Consents" opened S18 with the item highlighted: [shell-dashboard.png](docs/evidence/phase1/shell-dashboard.png), [shell-consents.png](docs/evidence/phase1/shell-consents.png). Fonts loaded locally (Inter 400/500/600, JetBrains Mono 400); 0 requests to non-local hosts |
 | … on two laptops / two OSes | **PENDING** | only one machine available |
 | `/api/v1/health` returns 200 through nginx | PASS | `curl -i 127.0.0.1:8080/api/v1/health` → `HTTP/1.1 200 OK`, `{"status":"ok","git_commit":"2401cd2","db":"ok","models":null,"templates":null,"egress_guard":{"enabled":true,"installed":false},"consent_mode":"ALL_PARTICIPANTS",...}`; `docker compose ps`: api and db healthy |
-| CI green on `main` | **PENDING** (no GitHub remote yet). Local run of the same jobs in the same images: PASS | `make test` (backend: ruff ✔, black ✔, pytest 3 passed, coverage gate passed; frontend: eslint + prettier ✔, vitest 30 passed, tsc + vite build ✔). Note: the coverage gate is vacuous until `core/` has code (0 statements = 100%) |
+| CI green on `main` | PASS (GitHub Actions, reported by the user on 2026-10-03; not opened from this machine because the repo is private and `gh` is not installed here) | Private repo `jainmokshit1-byte/SPECID`, `main` pushed at `915ff40`; run [37125434672](https://github.com/jainmokshit1-byte/SPECID/actions/runs/37125434672) green. Earlier local run of the same jobs in the same images: `make test` (backend: ruff ✔, black ✔, pytest 3 passed, coverage gate passed; frontend: eslint + prettier ✔, vitest 30 passed, tsc + vite build ✔). Note: the coverage gate is vacuous until `core/` has code (0 statements = 100%) |
 | `docker network inspect specid_backend --format '{{.Internal}}'` prints `true` | PASS | Prints `true` (`specid_frontend` prints `false`); api and db attach only to `specid_backend`, web to both; from inside `api`, a connection to 1.1.1.1 fails with `Network is unreachable`; `make offline-check` passes its network part and says PARTIAL for the Phase 5 counter check |
 
 ### Phase 1 revision: v1.2 minimal shell (DEC-10)
@@ -69,7 +69,7 @@ Done (App Flow v1.2 §3.1–3.3, §4.3; UI/UX brief v1.2 §1.4, §4, §6, §7.1)
 - Evidence (Chrome headless, 1366×768, `web` rebuilt): [shell-v12-home.png](docs/evidence/phase1/shell-v12-home.png), [shell-v12-unbuilt-route.png](docs/evidence/phase1/shell-v12-unbuilt-route.png) (`/consents` by URL renders, not in the menu). `grep showUnbuilt dist/assets/*.js` → 0 matches. The v1.1 screenshots stay as history
 
 ### Pending / known issues
-- Two-laptop check and GitHub CI run (above).
+- Two-laptop check (above). GitHub CI on `main` is green (run 37125434672).
 - `make` on Windows must run from Git Bash (needs `sh`); the WinGet `make` is on the user PATH only in new shells.
 - `npm ci` warns that eslint 9.39 and recharts 2.x are past their support windows; versions follow TRD section 3 (Recharts 2) and are frozen. Revisit only if a problem appears.
 - React Router prints v7 future-flag warnings in tests (harmless).
