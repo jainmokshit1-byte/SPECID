@@ -10,7 +10,9 @@ Adding an entry needs a DEC in docs/DECISIONS.md (checked below).
 
 import random
 import re
-import unicodedata
+import string
+import sys
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -66,11 +68,12 @@ def test_every_deviation_is_logged_in_decisions() -> None:
 
 # ---- allowlist predicates ----
 def _dev3(text: str) -> bool:
-    """DEV-3 applies when NFKC or non-printing removal can change the text."""
-    up = text.upper()
-    if unicodedata.normalize("NFKC", text) != text or unicodedata.normalize("NFKC", up) != up:
-        return True
-    return any(not ch.isprintable() and not ch.isspace() for ch in text)
+    """DEV-3 applies only to input with a non-ASCII or a non-printing character (DEC-21).
+
+    Printable-ASCII input (whitespace included) gets no tolerance: NFKC leaves it unchanged
+    and there is nothing to remove, so core/ must match the reference exactly.
+    """
+    return not text.isascii() or any(not ch.isprintable() and not ch.isspace() for ch in text)
 
 
 def _dev1(ref_short: Any) -> bool:
@@ -213,6 +216,35 @@ def test_core_conforms_on_generated_text(x: str, y: str) -> None:
 @given(st.text(), st.text())
 def test_core_conforms_on_any_text(x: str, y: str) -> None:
     assert_conforms(x, y)
+
+
+PRINTABLE_ASCII = st.text(alphabet=string.printable)
+
+
+@given(PRINTABLE_ASCII, PRINTABLE_ASCII)
+def test_core_conforms_on_printable_ascii(x: str, y: str) -> None:
+    assert not _dev3(x) and not _dev3(y)  # no DEV-3 tolerance on printable ASCII
+    assert_conforms(x, y)
+
+
+def test_ascii_input_gets_no_dev3_tolerance(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A planted core/ difference fails on ASCII input; DEV-3 tolerates it only on non-ASCII."""
+    real_e = E
+
+    def drifted(text: str, mpn: str | None = None, maker: str | None = None) -> Any:
+        s = real_e(text, mpn, maker)
+        return replace(s, residual=(*s.residual, "DRIFT"))
+
+    monkeypatch.setattr(sys.modules[__name__], "E", drifted)
+    ascii_text = "VALVE GATE 4IN CL150 WCB FLANGED RF"
+    with pytest.raises(AssertionError):
+        assert_conforms(ascii_text, ascii_text)
+    assert_conforms(ascii_text + " É", ascii_text)  # non-ASCII input: DEV-3 applies
+
+    ascii_inputs = [t for pair in GOLDEN_PAIRS for t in pair] + ['4" PIPE', "A\tB\nC\x0bD"]
+    assert not any(_dev3(t) for t in ascii_inputs)
+    for t in ("VALVE ＧATE", "GATE\x00VALVE", "GATE​VALVE"):
+        assert _dev3(t), t
 
 
 def test_dev1_short_desc_leaves_out_missing_values() -> None:
