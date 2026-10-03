@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SpecID
 
 A governed national material registry for CPSEs (SIH 2026 · PS SIH26099). It turns ERP material records into verified specifications, decides IDENTICAL / EQUIVALENT / NOT_EQUIVALENT / INSUFFICIENT_DATA with an attribute veto, and issues one Common National Material Code (CNMC) per specification with a crosswalk to every CPSE legacy code.
@@ -34,3 +35,6 @@ Other targets from TRD Appendix B (`models`, `seed`, `demo-data`, `test-ml`, `ev
 ## Layout
 
 TRD Appendix L: `backend/app/{core,services,api,db,eval,security,schemas}`, `frontend/src`, `templates/`, `models/` (git-ignored), `data/`, `docs/`, `.github/workflows/`.
+=======
+# SPECID
+>>>>>>> aefebc587b75f46c0e98b32c2614a681c03b1364
