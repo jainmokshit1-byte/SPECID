@@ -1,6 +1,6 @@
 """core/ conforms to the verbatim PRD Appendix C reference, except allowlisted deviations.
 
-The allowlist is DEVIATIONS below; each entry names the DEC that documents it (DEC-21, DEC-24).
+The allowlist is DEVIATIONS below; each entry names the DEC that documents it (DEC-21, 24, 26).
 
 Compared on every corpus pair: extraction (category, stated attributes, notes, residual), the
 decision (verdict, route, reasons, every evidence row), the short text, text_sim, both
@@ -35,6 +35,7 @@ DEVIATIONS = {
     "DEV-2": ("DEC-21", "NUT rule drops length_mm when either side is a nut (reference: A only)"),
     "DEV-3": ("DEC-21", "normaliser applies NFKC and drops non-printing characters (TR-MOD-01)"),
     "DEV-4": ("DEC-24", "normaliser repeats the rules to a fixed point (FR-201 idempotence)"),
+    "DEV-5": ("DEC-26", "IDENTICAL needs MPN and maker on both sides, equal without case"),
 }
 REF_MAX_PASSES = 8  # the same cap as core/ (DEC-24)
 
@@ -327,26 +328,79 @@ def test_dev4_applies_only_where_the_reference_is_not_idempotent(
         assert_conforms("PIPE 6IN SCH40 A106 GR.ADE B", "PIPE 6IN SCH40 A106B")  # nor under DEV-4
 
 
-@pytest.mark.parametrize(
-    "make",
-    [
-        (("X-1", "ACME"), ("X-1", "acme")),
-        (("X-1", "ACME"), ("X-1", None)),
-        (("X-1", None), ("X-1", None)),
-        (("X-1", "ACME"), ("x-1", "ACME")),
-        ((None, "ACME"), (None, "ACME")),
-        (("X-1", "ACME"), ("X-2", "ACME")),
-    ],
-)
-def test_identical_conforms_on_mpn_and_maker(make: Any) -> None:
-    """The text corpora carry no MPN or maker; IDENTICAL vs EQUIVALENT is checked here."""
-    (mpn_a, maker_a), (mpn_b, maker_b) = make
-    for x, y in (("VALVE GATE 4IN CL150 WCB FLANGED RF", "GV 100NB 150# WCB RF FLANGED"),
-                 ("NUT HEX M20 2H", "HEX NUT M20 A194 2H")):  # fmt: skip
-        ref = R.decide(R.extract(x, mpn_a, maker_a), R.extract(y, mpn_b, maker_b))
-        core = D(E(x, mpn_a, maker_a), E(y, mpn_b, maker_b))
-        assert (core.verdict, core.route, list(core.reasons)) == (
-            ref["verdict"],
-            ref["route"],
-            ref["reasons"],
+def _key(value: str | None) -> str:
+    return (value or "").strip().upper()
+
+
+def _dev5(make_a: tuple[str | None, str | None], make_b: tuple[str | None, str | None]) -> bool:
+    """DEV-5 applies only when (a) a manufacturer is missing or empty on either side, or (b) the
+    MPNs or the manufacturers differ only in case (after the same trim as core/)."""
+    (mpn_a, maker_a), (mpn_b, maker_b) = make_a, make_b
+    if not _key(maker_a) or not _key(maker_b):
+        return True
+    return any(x != y and _key(x) == _key(y) for x, y in ((mpn_a, mpn_b), (maker_a, maker_b)))
+
+
+def assert_make_conforms(x: str, y: str, make_a: Any, make_b: Any) -> None:
+    """Under DEV-5 only IDENTICAL vs EQUIVALENT may differ, and only as PRD 9.5 says."""
+    ref = R.decide(R.extract(x, *make_a), R.extract(y, *make_b))
+    core = D(E(x, *make_a), E(y, *make_b))
+    assert (core.route, list(core.reasons)) == (ref["route"], ref["reasons"]), (x, y)
+    if _dev5(make_a, make_b) and ref["verdict"] in ("IDENTICAL", "EQUIVALENT"):
+        (mpn_a, maker_a), (mpn_b, maker_b) = make_a, make_b
+        prd = bool(_key(mpn_a) and _key(maker_a)) and (_key(mpn_a), _key(maker_a)) == (
+            _key(mpn_b),
+            _key(maker_b),
         )
+        assert core.verdict == ("IDENTICAL" if prd else "EQUIVALENT"), (x, y, make_a, make_b)
+    else:
+        assert core.verdict == ref["verdict"], (x, y, make_a, make_b)
+
+
+MAKES = [
+    (("X-1", "ACME"), ("X-1", "ACME")),  # exact: no DEV-5
+    (("X-1", "ACME"), ("X-1", "acme")),  # DEV-5 (b)
+    (("x-1", "ACME"), ("X-1", "ACME")),  # DEV-5 (b): the reference compares MPNs with case
+    (("X-1", "ACME"), ("X-1", None)),  # DEV-5 (a)
+    (("X-1", None), ("X-1", None)),  # DEV-5 (a): the reference calls this IDENTICAL
+    (("X-1", ""), ("X-1", "")),  # DEV-5 (a)
+    ((None, "ACME"), (None, "ACME")),
+    (("X-1", "ACME"), ("X-2", "ACME")),
+    (("X-1", "ACME"), ("X-1", "BETA")),
+]
+MAKE_TEXTS = [
+    ("VALVE GATE 4IN CL150 WCB FLANGED RF", "GV 100NB 150# WCB RF FLANGED"),
+    ("NUT HEX M20 2H", "HEX NUT M20 A194 2H"),
+    ("VALVE GATE 4IN CL150 WCB FLANGED RF", "VALVE GATE 4IN CL300 WCB FLANGED RF"),  # veto
+    ("VALVE GATE 4IN CL150 WCB FLANGED", "VALVE GATE 4IN CL150 WCB FLANGED RF"),  # unknown
+]
+
+
+@pytest.mark.parametrize(("make_a", "make_b"), MAKES)
+def test_identical_conforms_on_mpn_and_maker(make_a: Any, make_b: Any) -> None:
+    """The text corpora carry no MPN or maker; IDENTICAL vs EQUIVALENT is checked here."""
+    for x, y in MAKE_TEXTS:
+        assert_make_conforms(x, y, make_a, make_b)
+        assert_make_conforms(y, x, make_b, make_a)
+
+
+def test_dev5_scope_and_planted_differences(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert not _dev5(("X-1", "ACME"), ("X-1", "ACME"))
+    assert not _dev5(("X-1", "ACME"), ("X-2", "BETA"))
+    assert _dev5(("X-1", "ACME"), ("X-1", None)) and _dev5(("X-1", "ACME"), ("x-1", "ACME"))
+    real_d = D
+
+    def drifted_verdict(a: Any, b: Any, **kw: Any) -> Any:
+        r = real_d(a, b, **kw)
+        return replace(r, verdict="EQUIVALENT") if r.verdict == "IDENTICAL" else r
+
+    def drifted_route(a: Any, b: Any, **kw: Any) -> Any:
+        return replace(real_d(a, b, **kw), route="AUTO_ELIGIBLE")
+
+    x, y = MAKE_TEXTS[0]
+    monkeypatch.setattr(sys.modules[__name__], "D", drifted_verdict)
+    with pytest.raises(AssertionError):  # outside DEV-5 a verdict change is not excused
+        assert_make_conforms(x, y, ("X-1", "ACME"), ("X-1", "ACME"))
+    monkeypatch.setattr(sys.modules[__name__], "D", drifted_route)
+    with pytest.raises(AssertionError):  # inside DEV-5 the route must still match
+        assert_make_conforms(x, y, ("X-1", "ACME"), ("X-1", None))

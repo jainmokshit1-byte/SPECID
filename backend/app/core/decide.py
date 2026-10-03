@@ -71,6 +71,22 @@ def compare(name: str, x: Any, y: Any) -> Status:
     return "CONFLICT"
 
 
+def _make_key(value: str | None) -> str:
+    return (value or "").strip().upper()
+
+
+def same_make(a: Spec, b: Spec) -> bool:
+    """IDENTICAL test of PRD 9.5 / FR-604 (DEC-26 DEV-5).
+
+    MPN and manufacturer must both be present on both sides and equal, compared without case
+    after trimming. Used only after the veto and the unknown-state have passed, so a failed test
+    only means EQUIVALENT instead of IDENTICAL.
+    """
+    mpn_a, mpn_b = _make_key(a.mpn), _make_key(b.mpn)
+    maker_a, maker_b = _make_key(a.maker), _make_key(b.maker)
+    return bool(mpn_a and maker_a) and mpn_a == mpn_b and maker_a == maker_b
+
+
 def _note(spec: Spec, attr: str) -> str | None:
     meta = spec.meta.get(attr)
     return meta.note if meta else None
@@ -140,10 +156,7 @@ def decide(
         # item criticality overrides the template default; either side critical -> critical
         if any(t.critical_default if c is None else c for c in criticality):
             flags.append("critical class: maker-checker")
-        same_make = (
-            bool(a.mpn) and a.mpn == b.mpn and (a.maker or "").upper() == (b.maker or "").upper()
-        )
-        verdict = "IDENTICAL" if same_make else "EQUIVALENT"
+        verdict = "IDENTICAL" if same_make(a, b) else "EQUIVALENT"
         route = "REVIEW" if flags else "AUTO_ELIGIBLE"
         reasons = tuple(flags)
     d = Decision(verdict, route, reasons, ev, None, t.version)

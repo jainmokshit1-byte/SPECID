@@ -64,11 +64,30 @@ def test_identical_needs_equal_mpn_and_maker() -> None:
     ) -> str:
         return D(E(VALVE, mpn_a, maker_a), E(VALVE, mpn_b, maker_b)).verdict
 
-    assert verdict("X-1", "ACME", "X-1", "acme") == "IDENTICAL"  # maker case-insensitive
+    # PRD 9.5 / FR-604 (DEC-26 DEV-5): both present on both sides, equal without case after trim
+    assert verdict("x-1", "ACME", "X-1", "acme") == "IDENTICAL"
+    assert verdict(" X-1 ", " Acme", "X-1", "ACME ") == "IDENTICAL"
+    assert verdict("X-1", None, "X-1", None) == "EQUIVALENT"  # same MPN, both makers missing
+    assert verdict("X-1", "", "X-1", "  ") == "EQUIVALENT"  # empty makers count as missing
+    assert verdict("X-1", "ACME", "X-1", None) == "EQUIVALENT"
+    assert verdict("X-1", "ACME", "X-1", "BETA") == "EQUIVALENT"  # same MPN, different makers
     assert verdict("X-1", "ACME", "X-2", "ACME") == "EQUIVALENT"
-    assert verdict("X-1", "ACME", "X-1", "BETA") == "EQUIVALENT"
+    assert verdict(None, "ACME", None, "ACME") == "EQUIVALENT"
     assert verdict(None, None, None, None) == "EQUIVALENT"
-    assert verdict("X-1", "ACME", None, "ACME") == "EQUIVALENT"
+
+
+def test_a_failed_identical_test_never_changes_the_normal_path() -> None:
+    """Same MPN and maker never skip the veto or the unknown-state (DEC-26)."""
+    same = ("X-1", "ACME")
+    veto = D(E(VALVE, *same), E(VALVE.replace("CL150", "CL300"), *same))
+    assert (veto.verdict, veto.route) == ("NOT_EQUIVALENT", "NONE")
+    unknown = D(E(VALVE, *same), E(VALVE.replace(" RF", ""), *same))
+    assert (unknown.verdict, unknown.route) == ("INSUFFICIENT_DATA", "REVIEW")
+    for maker_b in (None, "BETA"):  # IDENTICAL test fails: EQUIVALENT, same route and reasons
+        r = D(E(VALVE, *same), E(VALVE, "X-1", maker_b))
+        ok = D(E(VALVE, *same), E(VALVE, *same))
+        assert (r.verdict, ok.verdict) == ("EQUIVALENT", "IDENTICAL")
+        assert (r.route, r.reasons, r.confidence) == (ok.route, ok.reasons, ok.confidence)
 
 
 def test_reasons_follow_tr_alg_02_order() -> None:
