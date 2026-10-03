@@ -1,6 +1,6 @@
 # PROGRESS
 
-Current phase: **Phase 1 · Setup — done** (2 criteria PENDING, see below), shell revised to the v1.2 minimal UI (DEC-10). Next: Phase 2 · Database (awaiting approval of its plan).
+Current phase: **Phase 2 · Database — done** (gate PASS, see below). Phase 1 done with 2 criteria PENDING; shell revised to the v1.2 minimal UI (DEC-10). Next: Phase 3 · Auth, RBAC and audit (awaiting approval of its plan).
 
 Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.5 P0**. Deviations: [docs/DECISIONS.md](docs/DECISIONS.md).
 
@@ -16,8 +16,13 @@ Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.
 - **Memory (DEC-09):** Docker stays at default memory (~8 GB). Demo dataset ≈ 3,000 records (`n_entities` ≈ 1,200, a parameter); evaluation preset `hard_negative_share = 0.5`; report the real *n* of hard negatives and its bound; performance budgets measured on 3k; auto-eligibility OFF; `mem_limit` api 4g / db 1g (applied); embedding batch 64; one job worker.
 - **Navigation (DEC-10):** each phase adds the paths of the screens it builds to `BUILT_PATHS` in `frontend/src/routes.ts`; only then do they appear in the sidebar and tabs. Developer switch `?dev=1` (dev server only) shows the rest.
 - **Template activation (DEC-04):** golden tests + ADMIN acknowledgement of the impact preview; no second ADMIN.
+- **Seed and audit (DEC-11):** `make seed` writes no `audit_event` rows; the hash chain starts with the first real action in Phase 3.
+- **Seed content (DEC-13):** gasket v1 is DRAFT; UNSPSC_MAP v1 is empty until a code is verified with a source note; `RunConfig` defaults arrive with `settings.RunDefaults` in Phase 5.
 
 ## Tasks added to later phases
+
+### Phase 8 (in addition to the Implementation Plan's Phase 8 tasks)
+- [ ] **Connect the API as `specid_app`** (Backend Schema Appendix B, §5.4; DEC-12): add an app DB password to `.env.example`, keep the owner URL for migrations and use the `specid_app` URL for requests, apply Appendix B after migrations, set `app.cpse_id` per request for the procurement RLS. Appendix B itself is already verified by `test_appendix_b_hardening_as_specid_app`
 
 ### Phase 7 (in addition to the Implementation Plan's Phase 7 tasks)
 - [ ] **S17 About & honesty** (`/about`, P0, FR-1442; DEC-07): honesty text, evidence ladder, versions (app, templates, dictionary, models, commit), licences of bundled models and fonts. Built next to the S11 honesty panel; **both screens read the honesty text from one shared source** so the wording cannot drift
@@ -63,3 +68,32 @@ Done (App Flow v1.2 §3.1–3.3, §4.3; UI/UX brief v1.2 §1.4, §4, §6, §7.1)
 - Sidebar badges (Review, Consents), role filtering, a working run selector, user menu entries, breadcrumbs: later phases (DEC-05, DEC-10).
 - Doc alignment owed (DEC-10): PRD 11.2/§15/FR-1463/FR-1491, UI/UX brief §4/§6 footer, TRD TR-UI-04 names.
 - JetBrains Mono glyph check (`O0o l1I| 5S 8B` at 13 px, UI/UX brief 3.3) to be confirmed visually in Phase 9.
+
+## Phase 2 · Database
+
+### Done
+- **T1 `0001_initial`** (TR-DAT-01): `backend/app/db/migrations/versions/0001_initial.sql` is Backend Schema Appendix A (schema v0.6) byte for byte. `test_sql_file_equals_appendix_a` compares it with `impdocs/` on every run. The API lifespan runs `alembic upgrade head` first (`app/db/migrate.py`). `0001` has no downgrade (§13)
+- **T2 models and contracts**: `app/db/models.py` has the 26 SQLAlchemy 2.0 models. `test_models_match_db.py` checks columns, types, nullability, primary keys and foreign keys of every table against the migrated DB. `app/schemas/jsonb.py` has one Pydantic model per §6 JSONB contract (`CONTRACTS`, `DICTIONARY_CONTENT`). Evidence rows require `rule` and `rule_text` and exclude `MISSING_BOTH` (TR-DAT-05). Audit diffs reject secret keys
+- **T3 COPY helper** (TR-DAT-03): `app/db/copy.py` `copy_rows()` uses psycopg 3 `COPY … FROM STDIN` in batches of 5,000 inside the caller's transaction. Values are adapted by the column's DB type (dict/list → jsonb, list → arrays)
+- **T4 `make seed`**: `templates/{valve,pipe,flange,fastener,motor,gasket}.yaml` = PRD Appendix A (checked by a test). `templates/uom.yaml` = TRD Appendix I. `templates/dictionary.yaml` = abbreviations (PRD 9.2 rule 9), header synonyms (TRD H.1) and an empty UNSPSC map. `app/db/seed.py`:
+  - CPSE-A/B/C (synthetic names, "Oil & Gas", 64-hex random salt)
+  - meera MAKER/A, arjun CHECKER/B, kavya CHECKER/C, admin, auditor, erp INTEGRATOR, all with bcrypt hashes of `DEMO_PASSWORD`; `must_change_password = not SEED_DEMO_USERS`
+  - 5 templates ACTIVE plus gasket DRAFT; 4 dictionaries v1 ACTIVE
+  - safe to run again; writes no audit rows (DEC-11)
+- **T5 §15 checks** (`tests/integration/test_schema.py`, 25 cases): consent from the maker's and checker's CPSEs; decline needs a reason (≥ 5 chars); one consent per CPSE; change-notice acknowledgement needs a time; audit UPDATE, DELETE and TRUNCATE rejected; audit hash unique; CNMC format (5 bad forms), MERGED needs a survivor, short description ≤ 40; second active mapping rejected, removal needs who, when and why, then the code can be remapped; maker ≠ checker; one task per cluster; pair order and per-run uniqueness; `cannot_link` order; one ACTIVE template/dictionary version; source note ≥ 5; re-ingest blocked by content hash; the 4 TRD Appendix J queries run with expected results; Appendix B as `specid_app` (own CPSE's rows only, aggregate returns both CPSEs, DELETE on `audit_event` → permission denied)
+- `ci_local.sh` mounts `impdocs/` and `templates/` read-only so the verbatim checks and seed tests run (on GitHub CI they come from the checkout)
+- Test totals: backend **109 passed** (was 3), 0 skipped. Frontend unchanged (61). `BUILT_PATHS` unchanged (no screens in this phase)
+
+### Gate: "Done when" criteria
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| A fresh `make up && make seed` creates all tables | PASS | `docker compose down -v` (the old volume had 0 tables), then `make up` → api log `Running upgrade -> 0001_initial`, `migrations_applied`; api healthy. `make seed` → `{"added": {"cpse": 3, "app_user": 6, "template": 6, "dictionary": 4}}`; a second `make seed` → all 0. psql: 26 tables (+ `alembic_version` = `0001_initial`), users and roles as above, 0 audit events. `curl 127.0.0.1:8080/api/v1/health` → `HTTP/1.1 200 OK`, `"db":"ok"`, `"templates":null` (DEC-05, until Phase 4) |
+| `pytest tests/integration/test_schema.py` passes (append-only audit, active-mapping uniqueness, maker ≠ checker, pair order, CNMC format) | PASS | `25 passed in 3.96s` on a throwaway PostgreSQL 16; full `sh backend/scripts/ci_local.sh backend`: ruff ✔, black ✔, `109 passed`, coverage gate passed (still vacuous: `core/` is empty until Phase 4) |
+
+### Pending / known issues
+- **Never point the backend test suite at the stack's database.** The integration fixture drops and recreates schema `public`. CI and `ci_local.sh` use throwaway containers.
+- `/health` reports `templates: null` until the Phase 4 loader exists (DEC-05). The SYNTHETIC DATA badge stays always on (DEC-10). No synthetic batches exist until Phases 4–5.
+- The API connects as the DB owner until Phase 8 (DEC-12).
+- `change_notice.delta` has no shape in §6 yet. A Pydantic model will be added with SF-12 (P1).
+- Starlette prints a deprecation warning about `httpx` in the TestClient (harmless; versions frozen).
