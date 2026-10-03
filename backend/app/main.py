@@ -1,7 +1,7 @@
 """SpecID FastAPI application.
 
 Startup order (TRD 2.2): guard -> settings -> DB -> templates -> models -> registry index.
-Phase 1 loads settings only; the other steps arrive in their phases.
+Phase 2 adds migrations (TR-DAT-01); the other steps arrive in their phases.
 """
 
 import logging
@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import health
+from app.db.migrate import upgrade_head
 from app.settings import get_settings
 
 API_PREFIX = "/api/v1"
@@ -43,6 +44,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         consent_mode=settings.consent_mode,
         offline=settings.offline,
     )
+    upgrade_head(settings.database_url)  # TR-DAT-01: migrations before templates load
+    structlog.get_logger().info("migrations_applied")
     yield
 
 

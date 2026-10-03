@@ -19,6 +19,7 @@ backend() {
   until docker exec "$DB" pg_isready -U specid -d specid >/dev/null 2>&1; do sleep 1; done
   echo "== backend job (python:3.11-slim, postgres:16-alpine) =="
   docker run --rm --network "$NET" -v "$ROOT/backend":/w -w /w \
+    -v "$ROOT/impdocs":/impdocs:ro \
     -v specid_pip_cache:/root/.cache/pip \
     -e DATABASE_URL="postgresql+psycopg://specid:specid@$DB:5432/specid" \
     -e DB_HOST="$DB" \
