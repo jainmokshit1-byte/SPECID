@@ -325,3 +325,28 @@ def test_dev4_applies_only_where_the_reference_is_not_idempotent(
         assert_conforms(idempotent, idempotent)  # a planted difference is not excused
     with pytest.raises(AssertionError):
         assert_conforms("PIPE 6IN SCH40 A106 GR.ADE B", "PIPE 6IN SCH40 A106B")  # nor under DEV-4
+
+
+@pytest.mark.parametrize(
+    "make",
+    [
+        (("X-1", "ACME"), ("X-1", "acme")),
+        (("X-1", "ACME"), ("X-1", None)),
+        (("X-1", None), ("X-1", None)),
+        (("X-1", "ACME"), ("x-1", "ACME")),
+        ((None, "ACME"), (None, "ACME")),
+        (("X-1", "ACME"), ("X-2", "ACME")),
+    ],
+)
+def test_identical_conforms_on_mpn_and_maker(make: Any) -> None:
+    """The text corpora carry no MPN or maker; IDENTICAL vs EQUIVALENT is checked here."""
+    (mpn_a, maker_a), (mpn_b, maker_b) = make
+    for x, y in (("VALVE GATE 4IN CL150 WCB FLANGED RF", "GV 100NB 150# WCB RF FLANGED"),
+                 ("NUT HEX M20 2H", "HEX NUT M20 A194 2H")):  # fmt: skip
+        ref = R.decide(R.extract(x, mpn_a, maker_a), R.extract(y, mpn_b, maker_b))
+        core = D(E(x, mpn_a, maker_a), E(y, mpn_b, maker_b))
+        assert (core.verdict, core.route, list(core.reasons)) == (
+            ref["verdict"],
+            ref["route"],
+            ref["reasons"],
+        )
