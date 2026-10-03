@@ -1,5 +1,6 @@
 // Route table: 03 App Flow v1.1 section 2 is authoritative (TRD TR-UI-01).
-// `phase` = Implementation Plan phase that builds the screen; null = not scheduled there (DECISIONS.md DEC-07).
+// `phase` = Implementation Plan phase that builds the screen (S17 assigned to Phase 7 by DECISIONS.md DEC-07);
+// null = not scheduled.
 
 export type Role = "MAKER" | "CHECKER" | "ADMIN" | "AUDITOR" | "INTEGRATOR";
 
@@ -262,7 +263,7 @@ export const SHELL_ROUTES: RouteDef[] = [
     roles: ALL,
     pri: "P0",
     prd: "FR-1442",
-    phase: null,
+    phase: 7,
   },
   {
     path: "/consents",

@@ -10,12 +10,16 @@ Build mode: **preparation build** (before the finale). Scope locked to **PRD v0.
 |---|---|---|
 | Q-01 | Do the 2026 finale rules allow code written before the event? | **Open.** Treated as a preparation build |
 | Q-02 | Finale duration, team size, venue hardware, internet | **Open.** Assume 36 h and a team of 6 |
-| DEC-07 | Which phase builds S17 About & honesty (P0, not scheduled in the plan)? | **Open.** Proposal: Phase 7 |
 
 ## Standing decisions that affect later phases
 
 - **Memory (DEC-09):** Docker stays at default memory (~8 GB). Demo dataset ≈ 3,000 records (`n_entities` ≈ 1,200, a parameter); evaluation preset `hard_negative_share = 0.5`; report the real *n* of hard negatives and its bound; performance budgets measured on 3k; auto-eligibility OFF; `mem_limit` api 4g / db 1g (applied); embedding batch 64; one job worker.
 - **Template activation (DEC-04):** golden tests + ADMIN acknowledgement of the impact preview; no second ADMIN.
+
+## Tasks added to later phases
+
+### Phase 7 (in addition to the Implementation Plan's Phase 7 tasks)
+- [ ] **S17 About & honesty** (`/about`, P0, FR-1442; DEC-07): honesty text, evidence ladder, versions (app, templates, dictionary, models, commit), licences of bundled models and fonts. Built next to the S11 honesty panel; **both screens read the honesty text from one shared source** so the wording cannot drift
 
 ## Phase 1 · Setup
 
