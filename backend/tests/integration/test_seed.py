@@ -128,3 +128,22 @@ def test_template_files_match_prd_appendix_a() -> None:
     expected = {d["id"]: d for d in yaml.safe_load_all(block)}
     got = {t.id: t.model_dump(exclude_unset=True) for t in load_templates(TEMPLATE_DIR)}
     assert got == expected
+
+
+@pytest.mark.parametrize(("seed_demo_users", "forced"), [(True, False), (False, True)])
+def test_seeded_login_forces_password_change_only_without_seed_demo_users(
+    conn: Connection, seed_demo_users: bool, forced: bool
+) -> None:
+    """App Flow 4.2: the forced change follows `must_change_password`; with SEED_DEMO_USERS=true
+    no demo user is asked (the UI dialog keys on the flag returned here)."""
+    from sqlalchemy.orm import Session
+
+    from app.security.ratelimit import login_limiter
+    from app.services import users
+
+    seed(conn, _settings(seed_demo_users=seed_demo_users))
+    login_limiter.reset()
+    with Session(bind=conn, join_transaction_mode="create_savepoint") as s:
+        for u in USERS:
+            result = users.login(s, u.username, PASSWORD, "s" * 40, 480)
+            assert result.user.must_change_password is forced

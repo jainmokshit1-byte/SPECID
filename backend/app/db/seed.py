@@ -15,7 +15,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import bcrypt
 import structlog
 import yaml
 from pydantic import Field
@@ -24,6 +23,7 @@ from sqlalchemy import Connection, create_engine, text
 
 from app.db.migrate import upgrade_head
 from app.schemas.jsonb import DICTIONARY_CONTENT, TemplateDefinition, UomContent
+from app.security.auth import hash_password
 
 SECTOR = "Oil & Gas"
 CPSES = [  # synthetic organisations, never real CPSE names
@@ -94,7 +94,7 @@ def load_dictionaries(template_dir: Path) -> list[tuple[str, int, Any]]:
 
 
 def _hash(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    return hash_password(password)  # bcrypt cost 12 (TR-SEC-01)
 
 
 def seed(conn: Connection, settings: SeedSettings) -> SeedResult:

@@ -1,5 +1,6 @@
 """Database engine and session factory (SQLAlchemy 2.0, psycopg 3)."""
 
+from collections.abc import Iterator
 from functools import lru_cache
 
 from sqlalchemy import Engine, create_engine, text
@@ -29,3 +30,10 @@ def ping(engine: Engine) -> bool:
         return True
     except Exception:
         return False
+
+
+def get_session() -> Iterator[Session]:
+    """FastAPI dependency: one session per request. Routers commit after the service call;
+    anything not committed is rolled back when the session closes."""
+    with get_session_factory()() as session:
+        yield session
