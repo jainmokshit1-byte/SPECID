@@ -83,9 +83,10 @@ export function signIn(role: Role, api: Omit<Api, "me"> = {}, patch: Partial<Me>
 }
 
 /** Shows the router location so tests can assert redirects. */
+// eslint-disable-next-line react-refresh/only-export-components -- test helper, never hot-reloaded
 function LocationProbe() {
   const { pathname, search } = useLocation();
-  return <output data-testid="location">{pathname + search}</output>;
+  return <div data-testid="location">{pathname + search}</div>;
 }
 
 export function renderAt(url: string) {

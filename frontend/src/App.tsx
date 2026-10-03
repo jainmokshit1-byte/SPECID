@@ -4,15 +4,21 @@ import { useUser } from "./auth/useAuth";
 import { RequireAuth } from "./auth/RequireAuth";
 import { AppShell } from "./components/layout/AppShell";
 import { TooltipProvider } from "./components/ui/Tooltip";
+import { Audit } from "./pages/Audit";
 import { Home } from "./pages/Home";
 import { Login } from "./pages/Login";
 import { NoAccess } from "./pages/NoAccess";
 import { NotFound } from "./pages/NotFound";
 import { Placeholder } from "./pages/Placeholder";
+import { Users } from "./pages/Users";
 import { LOGIN_ROUTE, type RouteDef, SHELL_ROUTES } from "./routes";
 
 /** Built screens get their page; every other App Flow route renders its placeholder by URL. */
-const PAGES: Record<string, () => JSX.Element> = { "/": Home };
+const PAGES: Record<string, () => JSX.Element> = {
+  "/": Home,
+  "/audit": Audit,
+  "/admin/users": Users,
+};
 
 /** A route the role may not open stays on its URL and shows "No access" (App Flow 4.4). */
 function Screen({ route }: { route: RouteDef }) {

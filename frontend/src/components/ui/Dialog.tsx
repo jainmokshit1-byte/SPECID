@@ -28,7 +28,7 @@ export function Dialog({
           onEscapeKeyDown={block}
           onPointerDownOutside={block}
           onInteractOutside={block}
-          className="fixed left-1/2 top-1/2 z-modal w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded border border-border bg-surface p-6 shadow-md"
+          className="fixed left-1/2 top-1/2 z-modal w-full max-w-[560px] -translate-x-1/2 -translate-y-1/2 rounded border border-border bg-surface p-6 shadow-md"
         >
           <div className="flex items-start justify-between gap-4">
             <D.Title className="text-h2">{title}</D.Title>

@@ -72,3 +72,14 @@ def test_verify_intact_then_reports_tampered_event(
     assert broken == {"ok": False, "events": 1, "first_bad_id": target}
     last = client.get(f"{API}/audit", params={"action": "AUDIT_VERIFIED"}, headers=h).json()
     assert last["items"][0]["after"] == {"ok": False, "events": 1, "first_bad_id": target}
+
+
+def test_cursor_built_by_the_ui_lists_older_events(
+    client: TestClient, ids: dict[str, uuid.UUID]
+) -> None:
+    """S12 links a broken event with cursorBefore(id + 1) = base64 of the id (TR-API-04)."""
+    for _ in range(4):
+        login(client, "meera")
+    h = login(client, "admin")
+    page = client.get(f"{API}/audit", params={"cursor": "Mw=="}, headers=h).json()  # btoa("3")
+    assert [i["id"] for i in page["items"]] == [2, 1]

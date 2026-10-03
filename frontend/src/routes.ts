@@ -290,7 +290,7 @@ export const SHELL_ROUTES: RouteDef[] = [
 
 /** Screens whose real page exists. Only these appear in navigation (App Flow 3.1, UI/UX brief
  * 1.4 rule 6); every other route still renders its placeholder by URL. Each phase adds its paths. */
-export const BUILT_PATHS: ReadonlySet<string> = new Set(["/"]);
+export const BUILT_PATHS: ReadonlySet<string> = new Set(["/", "/login", "/audit", "/admin/users"]);
 
 /** Pages that show the run selector in the top bar (App Flow 3.3). */
 export const RUN_SCOPED_PATHS: ReadonlySet<string> = new Set(["/", "/review", "/lookalikes"]);
