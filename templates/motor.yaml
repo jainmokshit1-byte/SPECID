@@ -1,0 +1,19 @@
+# PRD v0.5 Appendix A, copied without changes. Shared header:
+# SpecID category templates (machine-readable policy). One YAML document per category.
+# core = must be known and equal on both sides; extended = veto if both known and different,
+# flag for review if known on one side only; tolerant/make never veto.
+# rule_text = the sentences cited on the evidence card (must equal RULE_TEXT in the reference code).
+id: motor
+version: 1
+category: MOTOR
+critical_default: true
+core: [motor_type, power_kw, poles]
+extended: [rpm, voltage, ip, mounting]
+tolerant: [paint]
+make: [manufacturer, model, mpn]
+rule_text:
+  power_kw: "Equal within 1% (HP converted at 0.7457 kW/HP)"
+  rpm: "Equal within 5%"
+rules:
+  - "power_kw equal within 1% (HP converted at 0.7457 kW/HP); rpm equal within 5%"
+  - "Voltage, frame, mounting, IP and Ex are identity-critical in practice but often missing: extended level means 'known on one side only' -> REVIEW"

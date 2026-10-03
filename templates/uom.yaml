@@ -1,0 +1,39 @@
+# UoM alias table v1 (FR-205), from TRD v1.1 Appendix I. Seeded as dictionary kind UOM.
+# Extensions go through the admin dictionary workflow (FR-203), never by editing this file in place.
+version: 1
+aliases:
+  # EA: count
+  EA: EA
+  "NO": EA
+  NOS: EA
+  NO.: EA
+  PC: EA
+  PCS: EA
+  EACH: EA
+  NUMBER: EA
+  UNIT: EA
+  # M: length
+  M: M
+  MTR: M
+  MTRS: M
+  METRE: M
+  METER: M
+  METRES: M
+  METERS: M
+  # KG: mass
+  KG: KG
+  KGS: KG
+  KILOGRAM: KG
+  # L: volume
+  L: L
+  LTR: L
+  LITRE: L
+  LITER: L
+  # SET: count of sets
+  SET: SET
+  SETS: SET
+  # PR: pairs
+  PR: PR
+  PAIR: PR
+# metre or metric tonne: flagged, never mapped
+ambiguous: [MT]

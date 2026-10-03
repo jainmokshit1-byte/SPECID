@@ -1,0 +1,26 @@
+# PRD v0.5 Appendix A, copied without changes. Shared header:
+# SpecID category templates (machine-readable policy). One YAML document per category.
+# core = must be known and equal on both sides; extended = veto if both known and different,
+# flag for review if known on one side only; tolerant/make never veto.
+# rule_text = the sentences cited on the evidence card (must equal RULE_TEXT in the reference code).
+id: valve
+version: 1
+category: VALVE
+critical_default: true            # pressure-containing: always maker-checker
+core: [valve_type, size_dn, pressure_class, body_material, end_connection]
+extended: [design_standard, trim]
+tolerant: [paint, packaging]
+make: [manufacturer, model, mpn]
+value_domains:
+  valve_type: [GATE, GLOBE, CHECK, BALL, BUTTERFLY]
+  pressure_class: [150, 300, 600, 900, 1500, 2500]
+  end_connection: [FLANGED-RF, FLANGED-FF, FLANGED-RTJ, BW, SW, THRD]
+rule_text:
+  size_dn: "Compared as DN; inch and NB converted by table B.1; non-standard sizes stay unknown"
+  body_material: "Same family and same spec; generic vs specific is PARTIAL"
+  end_connection: "FLANGED with no face is PARTIAL against a specific face"
+aliases:
+  valve_type: {GV: GATE, GLV: GLOBE, CV: CHECK, BV: BALL}
+  body_material: {WCB: A216-WCB, WCC: A216-WCC, CF8M: A351-CF8M}
+rules:
+  - "FLANGED without a face -> FLANGED-? (PARTIAL against a specific face, so INSUFFICIENT_DATA)"

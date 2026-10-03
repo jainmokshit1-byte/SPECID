@@ -1,7 +1,7 @@
 name: specid
 
 # TRD v1.1 Appendix A. Deviations (logged in docs/DECISIONS.md): GIT_COMMIT on api (DEC-02),
-# mem_limit on api and db (DEC-11).
+# mem_limit on api and db (DEC-09).
 
 services:
   db:

@@ -1,0 +1,29 @@
+# Dictionaries v1 (FR-203, FR-405, FR-1005). Seeded as one dictionary row per kind.
+# UoM aliases are in uom.yaml. Changes go through the admin dictionary workflow (new version).
+version: 1
+
+# PRD v0.5 9.2 rule 9: whole-word expansions (the v1 seed of the reference code, Appendix C)
+ABBREVIATION:
+  SMLS: SEAMLESS
+  FLGD: FLANGED
+  WND: WOUND
+  GRAF: GRAPHITE
+  HD: HEAD
+  FLG: FLANGE
+
+# TRD v1.1 Appendix H.1: header synonyms (case-insensitive, punctuation ignored)
+HEADER_SYNONYM:
+  legacy_code: [material code, material no, item code, mat code, code, matnr]
+  short_text: [short text, description, material description, item description, maktx]
+  long_text: [long text, long description, specification, purchase text]
+  uom: [uom, unit, base unit, meins]
+  mat_group: [material group, category, matkl]
+  manufacturer: [manufacturer, make, mfr, mfrnr]
+  mpn: [part number, mpn, mfr part no, mfrpn]
+  plant: [plant, werks, location]
+  criticality: [criticality, critical, abc]
+  annual_value: [annual value, consumption value, annual spend]
+
+# FR-405: filled only from the official UNSPSC browser, each code with a source note.
+# Empty until an entry has been verified; no code is written from memory.
+UNSPSC_MAP: {}

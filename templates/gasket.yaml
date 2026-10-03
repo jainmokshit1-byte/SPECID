@@ -1,0 +1,19 @@
+# PRD v0.5 Appendix A, copied without changes. Shared header:
+# SpecID category templates (machine-readable policy). One YAML document per category.
+# core = must be known and equal on both sides; extended = veto if both known and different,
+# flag for review if known on one side only; tolerant/make never veto.
+# rule_text = the sentences cited on the evidence card (must equal RULE_TEXT in the reference code).
+id: gasket
+version: 1
+category: GASKET
+critical_default: true
+core: [gasket_type, size_dn, pressure_class, winding_material, filler]
+extended: []
+tolerant: [packaging]
+make: [manufacturer]
+rule_text:
+  size_dn: "Compared as DN; inch and NB converted by table B.1; non-standard sizes stay unknown"
+  winding_material: "Same family and same spec; generic vs specific is PARTIAL"
+value_domains:
+  gasket_type: [SPIRAL-WOUND]
+  filler: [GRAPHITE, PTFE]

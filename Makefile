@@ -33,9 +33,9 @@ down:
 .env:
 	@echo "missing .env: run 'cp .env.example .env' and set local values"; exit 1
 
-## CPSEs, demo users, templates, seed-7 synthetic data
+## CPSEs, demo users, templates, dictionaries (Backend Schema 12); seed-7 synthetic data arrives in Phases 4-5
 seed:
-	$(call stub,2)
+	docker compose exec -T api python -m app.db.seed
 
 ## regenerate synthetic files and manifest (SEED=$(SEED))
 demo-data:

@@ -1,0 +1,21 @@
+# PRD v0.5 Appendix A, copied without changes. Shared header:
+# SpecID category templates (machine-readable policy). One YAML document per category.
+# core = must be known and equal on both sides; extended = veto if both known and different,
+# flag for review if known on one side only; tolerant/make never veto.
+# rule_text = the sentences cited on the evidence card (must equal RULE_TEXT in the reference code).
+id: flange
+version: 1
+category: FLANGE
+critical_default: true
+core: [flange_type, size_dn, pressure_class, face, material]
+extended: []
+tolerant: [paint]
+make: [manufacturer]
+rule_text:
+  size_dn: "Compared as DN; inch and NB converted by table B.1; non-standard sizes stay unknown"
+  material: "Same family and same spec; generic vs specific is PARTIAL"
+value_domains:
+  flange_type: [WN, SO, BLIND, LJ, SW, THRD]
+  face: [RF, FF, RTJ]
+rules:
+  - "Generic stainless (SS316) vs a specific spec (A182-F316): same family -> PARTIAL -> INSUFFICIENT_DATA"

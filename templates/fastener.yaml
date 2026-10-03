@@ -1,0 +1,18 @@
+# PRD v0.5 Appendix A, copied without changes. Shared header:
+# SpecID category templates (machine-readable policy). One YAML document per category.
+# core = must be known and equal on both sides; extended = veto if both known and different,
+# flag for review if known on one side only; tolerant/make never veto.
+# rule_text = the sentences cited on the evidence card (must equal RULE_TEXT in the reference code).
+id: fastener
+version: 1
+category: FASTENER
+critical_default: false           # may be AUTO_ELIGIBLE unless the item is flagged critical in the CSV
+core: [fastener_type, thread, length_mm, strength]
+extended: [head, coating]
+tolerant: [packaging]
+make: [manufacturer, mpn]
+value_domains:
+  fastener_type: [BOLT, STUD, NUT, SCREW]
+  strength: ["4.6", "5.6", "8.8", "10.9", "12.9", "B7", "2H"]
+rules:
+  - "For NUT, length_mm is not applicable and is dropped from core"
