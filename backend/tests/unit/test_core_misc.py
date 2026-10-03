@@ -82,5 +82,3 @@ def test_long_descriptions() -> None:
         "SPIRAL WOUND GASKET, 4 IN (DN100), CLASS 150, SS316, GRAPHITE FILLER"
     )
     assert long_desc(E("FLANGE WN CL150 RF")) == "WELD NECK FLANGE, CLASS 150, RAISED FACE"
-
-
