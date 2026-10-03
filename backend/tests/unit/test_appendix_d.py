@@ -161,6 +161,7 @@ def test_t_s3_supplying_a_missing_attribute() -> None:
 
 def test_t_s3_source_note_is_mandatory() -> None:
     import pytest
+
     from app.core.extract import supply_attribute
 
     a = E("VALVE GATE 4IN CL150 WCB FLANGED")

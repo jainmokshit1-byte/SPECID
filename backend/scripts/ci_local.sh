@@ -28,7 +28,7 @@ backend() {
     python:3.11-slim sh -c '
       set -e
       pip install -q --root-user-action=ignore --disable-pip-version-check -r requirements.lock -r requirements-dev.txt
-      ruff check .
+      ruff check --no-cache .  # a bind-mounted .ruff_cache can hide findings; GitHub has none
       black --check .
       pytest -p no:cacheprovider -m "not ml" --cov=app/core --cov-fail-under=70
     '
@@ -52,9 +52,9 @@ lint() {
   docker run --rm -v "$ROOT/backend":/w -w /w -v specid_pip_cache:/root/.cache/pip     python:3.11-slim sh -c '
       set -e
       pip install -q --root-user-action=ignore --disable-pip-version-check -r requirements.lock -r requirements-dev.txt
-      ruff check .
+      ruff check --no-cache .  # a bind-mounted .ruff_cache can hide findings; GitHub has none
       black --check .
-      mypy
+      mypy --cache-dir=/dev/null
     '
   echo "== lint: eslint, prettier (node:20-alpine) =="
   docker run --rm -v "$ROOT/frontend":/src -w /src     -v specid_node_modules:/src/node_modules -v specid_npm_cache:/root/.npm     node:20-alpine sh -c 'set -e; npm ci --no-audit --no-fund >/dev/null; npm run lint'

@@ -188,7 +188,7 @@ Stack rebuilt with `make up` (Git Bash with WinGet `make`), then `make seed` (0 
 | Architecture: `core/` imports nothing from services, API, DB (TR-TST-12) | PASS | `test_core_imports_nothing_forbidden` and `test_checker_catches_planted_imports` PASSED |
 
 ### Pending / known issues
-- **GitHub CI** on the pushed `main` to be confirmed; tag `gate-1` (TRD TR-CI-03) after that.
+- **GitHub CI** on `0427070` failed at `ruff check` (I001, one unsorted import block in `tests/unit/test_appendix_d.py`) that local CI had missed: `ruff` reused a stale `.ruff_cache` inside the bind-mounted `backend/`. Fixed, and `ci_local.sh` now runs `ruff check --no-cache` and `mypy --cache-dir=/dev/null`, so local lint sees what a fresh GitHub checkout sees. GitHub run on the fix to be confirmed; tag `gate-1` (TRD TR-CI-03) after that.
 - **Abstentions on seed-7** are high for true-equivalent pairs (1,265 of 2,166). Main causes: core attributes dropped on purpose by the generator (justified), style A cut at 40 characters, and the style B face words the Appendix C extractor does not read (task in Phase 5). The 4 true-equivalent pairs that were vetoed are `STD` with an unknown size (2) and the typo `INDUCTINO` (2): false vetoes, never false merges.
 - `core/normalise` logs one structlog warning if the 8-pass cap is reached (DEC-24): the only side effect in `core/`.
 - **To be aligned in `impdocs/`** (not edited): Implementation Plan Phase 4/5 task lists (DEC-20); PRD 9.2 and TRD TR-MOD-01 "rules repeat until the output stops changing (max 8 passes)" (DEC-24); TRD 4.2 `uom_canonical(raw, dictionary)` (DEC-23).
