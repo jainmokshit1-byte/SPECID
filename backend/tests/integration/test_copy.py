@@ -23,7 +23,7 @@ def _cpse_and_batch(conn: Connection) -> tuple[uuid.UUID, uuid.UUID]:
     return cpse, batch
 
 
-def test_copy_12001_records_in_three_batches(conn: Connection) -> None:
+def test_copy_10001_records_in_three_batches(conn: Connection) -> None:
     cpse, batch = _cpse_and_batch(conn)
     n = 2 * BATCH_SIZE + 1
     ids = [uuid.uuid4() for _ in range(n)]
