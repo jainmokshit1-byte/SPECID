@@ -231,7 +231,8 @@ Every *Expected Solution* bullet of the PS, the requirements that answer it, whe
 | Edit templates, dictionaries, thresholds | – | – | ✔ | – | – |
 | View audit log / verify chain | – | – | ✔ | ✔ | – |
 | Manage users | – | – | ✔ | – | – |
-| View Look-alike Guard, baselines, air-gap status | ✔ | ✔ | ✔ | ✔ | – |
+| View Look-alike Guard, baselines | ✔ | ✔ | ✔ | ✔ | – |
+| View air-gap status (`GET /system/airgap`, footer) | ✔ | ✔ | ✔ | ✔ | ✔ |
 | Supply a missing attribute (P1) | ✔ | ✔ | – | – | – |
 | Preview a rulebook change (P0, SF-6) | – | – | ✔ | – | – |
 | Unmerge a record from a CNMC (P1) | – | ✔ | – | – | – |
@@ -1060,7 +1061,7 @@ The expansion list is a **versioned dictionary** (FR-203); the code in Appendix 
 ### 9.3 Size and unit canonicalisation
 - Sizes map to **DN** through table B.1. Anything not in the table (for example `7 IN`) becomes *unknown* and is never guessed.
 - A bare `100 MM` is **not** accepted as a size (it could be outside diameter or DN); it stays as a technical residual token, so the pair becomes `INSUFFICIENT_DATA`.
-- `STD` → `40` only for DN ≤ 250; `XS` → `80` only for DN ≤ 200 (B.2). **SME must verify these limits.** `STD` / `XS` with no known size, or outside these limits, cannot be resolved and is **unknown** (see 9.5, *unresolvable values*), never compared as a raw word.
+- `STD` → `40` only for DN ≤ 250; `XS` → `80` only for DN ≤ 200 (B.2). **SME must verify these limits.** `STD` / `XS` with **no known size** cannot be resolved and is **unknown** (see 9.5, *unresolvable values*). With a known size above these limits, `STD` / `XS` stays its own canonical value (for example `STD` at DN300 is a different wall thickness from SCH40, so golden case `pipe-4` is `NOT_EQUIVALENT`).
 - `HP` → kW at 0.7457; kW values compare within 1%; rpm within 5%.
 
 ### 9.4 Templates and extraction
