@@ -110,7 +110,7 @@ describe("auth flow (App Flow 4.2)", () => {
     await submitLogin("erp");
     await waitFor(() => expect(location()).toBe("/search"));
     expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent(
-      "Search-before-create",
+      "Search before create",
     );
   });
 
@@ -240,7 +240,7 @@ describe("No access (App Flow 4.4)", () => {
     renderAt("/");
     const panel = await screen.findByRole("alert");
     expect(within(panel).getByRole("link")).toHaveAttribute("href", "/search");
-    expect(await sidebarLabels()).toEqual(["Registry"]); // codes (read-only) and notices
+    expect(await sidebarLabels()).toEqual(["Registry", "Help"]);
   });
 });
 

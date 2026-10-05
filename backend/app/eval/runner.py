@@ -195,6 +195,9 @@ def evaluate(
         "of_which_truly_different": sum(
             1 for p in test if m_b1(p) and p.verdict == "NOT_EQUIVALENT" and p.truth != "SAME"
         ),
+        "b1_wrong_merges_specid_asked": sum(
+            1 for p in test if m_b1(p) and p.truth != "SAME" and p.verdict == "INSUFFICIENT_DATA"
+        ),
         "specid_found_b1_missed": sum(
             1 for p in test if _specid(p) is True and not m_b1(p) and p.truth == "SAME"
         ),

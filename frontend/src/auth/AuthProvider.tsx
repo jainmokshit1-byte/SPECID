@@ -39,14 +39,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
   }, []);
 
-  const login = useCallback(async (username: string, password: string) => {
-    const r = await apiPost<LoginResponse>("/auth/login", { username, password });
+  const signIn = useCallback(async (r: LoginResponse) => {
     setSession({ token: r.access_token, expiresAt: r.expires_at });
     const me = await apiGet<Me>("/me");
     setUser(me);
     setStatus("signed-in");
     return me;
   }, []);
+
+  const login = useCallback(
+    async (username: string, password: string) =>
+      signIn(await apiPost<LoginResponse>("/auth/login", { username, password })),
+    [signIn],
+  );
+
+  const demoLogin = useCallback(
+    async (username: string) =>
+      signIn(await apiPost<LoginResponse>("/auth/demo-login", { username })),
+    [signIn],
+  );
 
   const logout = useCallback(() => {
     clearSession();
@@ -55,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ status, user, login, logout, refresh }}>
+    <AuthContext.Provider value={{ status, user, login, demoLogin, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

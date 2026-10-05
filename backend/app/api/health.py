@@ -67,6 +67,6 @@ def health(
         "ai_ready": settings.ai_provider != "off"
         and bool(settings.gemini_api_key)
         and not settings.gemini_api_key.startswith("PASTE"),
-        "classifier": settings.classifier_enabled,
+        "classifier": getattr(request.app.state, "classifier", None) is not None,  # loaded
         "embeddings_enabled": settings.embeddings_enabled,
     }

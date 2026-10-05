@@ -59,6 +59,11 @@ export const NAV_ITEMS: NavItem[] = [
     tabs: [
       { label: "Codes", path: "/registry", also: ["/registry/:cnmc"], roles: ALL },
       { label: "Search", path: "/search", roles: ["MAKER", "CHECKER", "ADMIN", "INTEGRATOR"] },
+      {
+        label: "Create material (SAP)",
+        path: "/erp-sim",
+        roles: ["MAKER", "CHECKER", "ADMIN", "INTEGRATOR"],
+      },
       { label: "Exports", path: "/exports", roles: MCA },
       { label: "Change notices", path: "/notices", roles: ["MAKER", "CHECKER", "INTEGRATOR"] },
     ],
@@ -67,6 +72,7 @@ export const NAV_ITEMS: NavItem[] = [
     id: "results",
     label: "Results",
     tabs: [
+      { label: "Savings", path: "/pooling", roles: MCA },
       { label: "Evaluation", path: "/evaluation", also: ["/evaluation/:evalId"], roles: MCAA },
     ],
   },

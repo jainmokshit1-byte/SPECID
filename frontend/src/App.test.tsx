@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SHELL_ROUTES } from "./routes";
 import { HEALTH, mockApi, renderAt, sidebarLabels, signIn } from "./test-utils";
@@ -109,60 +109,39 @@ describe("app shell (v1.2)", () => {
   });
 });
 
-describe("navigation hides unbuilt screens (default mode)", () => {
-  it("a MAKER sees only built items", async () => {
+describe("navigation (every App Flow screen is built)", () => {
+  it("a MAKER sees all seven items, none marked dev", async () => {
     signIn("MAKER");
     renderAt("/");
-    expect(await sidebarLabels()).toEqual(["Home", "Data", "Review", "Registry"]);
+    expect(await sidebarLabels()).toEqual(SIDEBAR_LABELS);
     expect(screen.queryByText("dev")).not.toBeInTheDocument();
   });
 
-  it("an unbuilt screen still renders by URL but is not in the menu", async () => {
+  it("a CHECKER sees the three Review tabs on /review", async () => {
     signIn("CHECKER");
+    renderAt("/review");
+    await screen.findByRole("heading", { level: 1 });
+    const tabs = within(screen.getByRole("navigation", { name: "Section" })).getAllByRole("link");
+    expect(tabs.map((t) => t.textContent)).toEqual(["To review", "Consents", "Look-alikes"]);
+    expect(tabs[0]).toHaveAttribute("aria-current", "page");
+  });
+
+  it("Results opens Savings first, with Evaluation as the second tab", async () => {
+    signIn("MAKER");
     renderAt("/evaluation");
     expect(
       await screen.findByRole("heading", { level: 1, name: "Evaluation" }),
     ).toBeInTheDocument();
-    expect(await sidebarLabels()).toEqual(["Home", "Data", "Review", "Registry"]);
-    expect(screen.queryByRole("navigation", { name: "Section" })).not.toBeInTheDocument();
+    const tabs = within(screen.getByRole("navigation", { name: "Section" })).getAllByRole("link");
+    expect(tabs.map((t) => t.textContent)).toEqual(["Savings", "Evaluation"]);
   });
 });
 
-describe("developer switch shows unbuilt screens, marked dev", () => {
-  it("?dev=1 lists the role's items and the CHECKER's three Review tabs", async () => {
-    signIn("CHECKER");
-    renderAt("/review?dev=1");
-    await screen.findByRole("heading", { level: 1 });
-    expect(await sidebarLabels()).toEqual([
-      "Home",
-      "Data",
-      "Review",
-      "Registry",
-      ...SIDEBAR_LABELS.slice(4).map((l) => `${l}dev`),
-    ]);
-    const tabs = within(screen.getByRole("navigation", { name: "Section" })).getAllByRole("link");
-    expect(tabs.map((t) => t.textContent)).toEqual(["To review", "Consents", "Look-alikesdev"]);
-    expect(tabs[0]).toHaveAttribute("aria-current", "page");
-  });
-
-  it("?dev=1 stays on while navigating in the same tab; ?dev=0 turns it off", async () => {
+describe("developer switch adds nothing once every screen is built", () => {
+  it("?dev=1 shows the same seven items with no dev marks", async () => {
     signIn("MAKER");
     renderAt("/?dev=1");
-    fireEvent.click(
-      within(await screen.findByRole("navigation", { name: "Main" })).getByText("Registry"),
-    );
-    expect(await screen.findByRole("heading", { level: 1, name: "Registry" })).toBeInTheDocument();
-    expect(await sidebarLabels()).toHaveLength(7);
-    document.body.innerHTML = "";
-    renderAt("/?dev=0");
-    expect(await sidebarLabels()).toEqual(["Home", "Data", "Review", "Registry"]);
-  });
-
-  it("VITE_SHOW_UNBUILT=true lists all seven items for a MAKER", async () => {
-    vi.stubEnv("VITE_SHOW_UNBUILT", "true");
-    signIn("MAKER");
-    renderAt("/");
-    expect(await sidebarLabels()).toHaveLength(7);
+    expect(await sidebarLabels()).toEqual(SIDEBAR_LABELS);
   });
 
   it("is never on in a production (demo) build, whatever the URL or env", async () => {
@@ -170,7 +149,7 @@ describe("developer switch shows unbuilt screens, marked dev", () => {
     vi.stubEnv("VITE_SHOW_UNBUILT", "true");
     signIn("MAKER");
     renderAt("/?dev=1");
-    expect(await sidebarLabels()).toEqual(["Home", "Data", "Review", "Registry"]);
+    expect(await sidebarLabels()).toEqual(SIDEBAR_LABELS);
   });
 });
 

@@ -71,6 +71,11 @@ export interface Health {
   consent_mode: string;
   embeddings_enabled: boolean;
   egress_guard: { enabled: boolean; installed: boolean };
+  demo_mode?: boolean;
+  demo_status?: "off" | "preparing" | "ready" | "failed" | null;
+  ai_provider?: string;
+  ai_ready?: boolean;
+  classifier?: boolean;
 }
 
 /** API-32 GET /system/airgap. */

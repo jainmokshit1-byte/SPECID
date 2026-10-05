@@ -4,23 +4,30 @@ import { useUser } from "./auth/useAuth";
 import { RequireAuth } from "./auth/RequireAuth";
 import { AppShell } from "./components/layout/AppShell";
 import { TooltipProvider } from "./components/ui/Tooltip";
+import { About } from "./pages/About";
 import { Audit } from "./pages/Audit";
 import { ClusterReview } from "./pages/ClusterReview";
 import { CnmcDetail } from "./pages/CnmcDetail";
 import { Consents } from "./pages/Consents";
+import { ErpSim } from "./pages/ErpSim";
+import { EvaluationList, EvaluationReport } from "./pages/Evaluation";
 import { Exports } from "./pages/Exports";
 import { Home } from "./pages/Home";
 import { Login } from "./pages/Login";
+import { Lookalikes } from "./pages/Lookalikes";
 import { NewRun } from "./pages/NewRun";
 import { NoAccess } from "./pages/NoAccess";
 import { Notices } from "./pages/Notices";
 import { PairEvidence } from "./pages/PairEvidence";
+import { Pooling } from "./pages/Pooling";
 import { NotFound } from "./pages/NotFound";
 import { Placeholder } from "./pages/Placeholder";
 import { Quality } from "./pages/Quality";
 import { Registry } from "./pages/Registry";
 import { ReviewQueue } from "./pages/ReviewQueue";
+import { Rulebook, TemplateDetailPage } from "./pages/Rulebook";
 import { RunConsole } from "./pages/RunConsole";
+import { Search } from "./pages/Search";
 import { Runs } from "./pages/Runs";
 import { Upload } from "./pages/Upload";
 import { Users } from "./pages/Users";
@@ -44,6 +51,15 @@ const PAGES: Record<string, () => JSX.Element> = {
   "/registry/:cnmc": CnmcDetail,
   "/exports": Exports,
   "/notices": Notices,
+  "/search": Search,
+  "/lookalikes": Lookalikes,
+  "/pooling": Pooling,
+  "/erp-sim": ErpSim,
+  "/evaluation": EvaluationList,
+  "/evaluation/:evalId": EvaluationReport,
+  "/about": About,
+  "/templates": Rulebook,
+  "/templates/:templateId": TemplateDetailPage,
 };
 
 /** A route the role may not open stays on its URL and shows "No access" (App Flow 4.4). */

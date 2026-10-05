@@ -41,8 +41,14 @@ export function HealthRing({
         />
       </svg>
       <figcaption className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="tabular text-display leading-none text-text">{score ?? "–"}</span>
-        <span className="mt-1 text-micro uppercase tracking-wide text-muted">{label}</span>
+        <span
+          className={`tabular leading-none text-text ${size < 80 ? "text-label" : "text-display"}`}
+        >
+          {score ?? "–"}
+        </span>
+        {label && size >= 80 && (
+          <span className="mt-1 text-micro uppercase tracking-wide text-muted">{label}</span>
+        )}
       </figcaption>
     </figure>
   );

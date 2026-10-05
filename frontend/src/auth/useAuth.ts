@@ -8,6 +8,8 @@ export interface AuthState {
   user: Me | null;
   /** POST /auth/login, then GET /me. Throws ApiError (401, 429) on failure. */
   login: (username: string, password: string) => Promise<Me>;
+  /** Hosted demo only (DEC-42): POST /auth/demo-login, no password. */
+  demoLogin: (username: string) => Promise<Me>;
   logout: () => void;
   /** Reload the user (after a password change). */
   refresh: () => Promise<void>;

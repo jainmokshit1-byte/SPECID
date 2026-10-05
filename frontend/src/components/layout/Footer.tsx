@@ -25,8 +25,20 @@ export function Footer() {
   );
 }
 
+const AI_LABEL: Record<string, string> = { gemini: "Gemini (synthetic data only)", off: "off" };
+
 export function AirGapStatus() {
   const airgap = useAirGap();
+  const health = useHealth();
+  // The hosted demo is online by design (DEC-41/42): never call it air-gapped.
+  if (airgap.data && (airgap.data.mode === "ONLINE" || health.data?.demo_mode))
+    return (
+      <span className="flex items-center gap-1.5 text-text">
+        <span className="h-2 w-2 rounded-full bg-auto-fg" aria-hidden="true" />
+        Cloud demo · AI: {AI_LABEL[health.data?.ai_provider ?? "off"] ?? health.data?.ai_provider} ·
+        outbound outside the allow-list blocked: {airgap.data.blocked_egress_attempts}
+      </span>
+    );
   if (airgap.data)
     return (
       <span className="flex items-center gap-1.5 text-text">

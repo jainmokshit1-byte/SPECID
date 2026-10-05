@@ -19,6 +19,11 @@ export interface RunStats {
   blocked_edges?: number;
   timings_ms?: Record<string, number>;
   blocked_egress?: number;
+  ai_provider?: string | null;
+  ai_records_asked?: number | null;
+  ai_values_accepted?: number | null;
+  ai_values_rejected?: number | null;
+  dense_pairs?: number | null;
 }
 
 export interface Run {

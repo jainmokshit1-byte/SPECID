@@ -157,7 +157,7 @@ export const SHELL_ROUTES: RouteDef[] = [
   {
     path: "/search",
     screen: "S9",
-    title: "Search-before-create",
+    title: "Search before create",
     purpose: "Free-text check against the registry",
     roles: ["MAKER", "CHECKER", "ADMIN", "INTEGRATOR"],
     pri: "P0",
@@ -238,7 +238,7 @@ export const SHELL_ROUTES: RouteDef[] = [
   {
     path: "/erp-sim",
     screen: "S14",
-    title: "Create material (mock ERP)",
+    title: "Create material (SAP simulation)",
     purpose: "Live duplicate check while typing",
     roles: ["MAKER", "CHECKER", "ADMIN", "INTEGRATOR"],
     pri: "P1",
@@ -248,7 +248,7 @@ export const SHELL_ROUTES: RouteDef[] = [
   {
     path: "/pooling",
     screen: "S15",
-    title: "Pooling view",
+    title: "Savings & pooling",
     purpose: "Full list of CNMCs held by ≥ 2 CPSEs",
     roles: MCA,
     pri: "P1",
@@ -258,7 +258,7 @@ export const SHELL_ROUTES: RouteDef[] = [
   {
     path: "/about",
     screen: "S17",
-    title: "About & honesty",
+    title: "About SpecID",
     purpose: "What the numbers mean, evidence ladder, versions, licences",
     roles: ALL,
     pri: "P0",
@@ -310,7 +310,22 @@ export const BUILT_PATHS: ReadonlySet<string> = new Set([
   "/registry/:cnmc",
   "/exports",
   "/notices",
+  // Go 1 chunk 5 + Go 2: insights, SAP simulation, evaluation, about
+  "/search",
+  "/lookalikes",
+  "/pooling",
+  "/erp-sim",
+  "/evaluation",
+  "/evaluation/:evalId",
+  "/about",
+  "/templates",
+  "/templates/:templateId",
 ]);
 
 /** Pages that show the run selector in the top bar (App Flow 3.3). */
-export const RUN_SCOPED_PATHS: ReadonlySet<string> = new Set(["/", "/review", "/lookalikes"]);
+export const RUN_SCOPED_PATHS: ReadonlySet<string> = new Set([
+  "/",
+  "/review",
+  "/lookalikes",
+  "/pooling",
+]);

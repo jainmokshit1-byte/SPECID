@@ -26,3 +26,14 @@ export function istDayStart(day: string, addDays = 0): string {
   d.setUTCDate(d.getUTCDate() + addDays);
   return d.toISOString();
 }
+
+const INR = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+
+/** Rupees with Indian digit grouping ("₹12,34,567"); "–" when unknown. */
+export function formatInr(n: number | null | undefined): string {
+  return n === null || n === undefined ? "–" : INR.format(n);
+}

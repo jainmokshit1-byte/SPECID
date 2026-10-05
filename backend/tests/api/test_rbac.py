@@ -33,6 +33,8 @@ ENDPOINTS: dict[tuple[str, str], Action | str] = {
     ("GET", "/api/v1/audit"): Action.VIEW_AUDIT,
     ("GET", "/api/v1/audit/verify"): Action.VIEW_AUDIT,
     ("GET", "/api/v1/system/airgap"): SIGNED_IN,
+    ("GET", "/api/v1/templates"): SIGNED_IN,
+    ("GET", "/api/v1/templates/{template_id}"): SIGNED_IN,
     ("POST", "/api/v1/runs"): Action.START_RUNS,
     ("GET", "/api/v1/runs"): Action.VIEW_CLUSTERS,
     ("GET", "/api/v1/runs/{run_id}"): Action.VIEW_CLUSTERS,

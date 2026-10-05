@@ -98,8 +98,8 @@ const APP_FLOW_3_2: Record<Role, Record<string, string[]>> = {
     Home: ["Home"],
     Data: ["Upload", "Matching runs"],
     Review: ["To review", "Look-alikes"],
-    Registry: ["Codes", "Search", "Exports", "Change notices"],
-    Results: ["Evaluation"],
+    Registry: ["Codes", "Search", "Create material (SAP)", "Exports", "Change notices"],
+    Results: ["Savings", "Evaluation"],
     Rules: ["Rulebook"],
     Help: ["About"],
   },
@@ -107,8 +107,8 @@ const APP_FLOW_3_2: Record<Role, Record<string, string[]>> = {
     Home: ["Home"],
     Data: ["Upload", "Matching runs"],
     Review: ["To review", "Consents", "Look-alikes"],
-    Registry: ["Codes", "Search", "Exports", "Change notices"],
-    Results: ["Evaluation"],
+    Registry: ["Codes", "Search", "Create material (SAP)", "Exports", "Change notices"],
+    Results: ["Savings", "Evaluation"],
     Rules: ["Rulebook"],
     Help: ["About"],
   },
@@ -116,8 +116,8 @@ const APP_FLOW_3_2: Record<Role, Record<string, string[]>> = {
     Home: ["Home"],
     Data: ["Upload", "Matching runs"],
     Review: ["Look-alikes"],
-    Registry: ["Codes", "Search", "Exports"],
-    Results: ["Evaluation"],
+    Registry: ["Codes", "Search", "Create material (SAP)", "Exports"],
+    Results: ["Savings", "Evaluation"],
     Rules: ["Rulebook", "Audit", "Users"],
     Help: ["About"],
   },
@@ -129,7 +129,10 @@ const APP_FLOW_3_2: Record<Role, Record<string, string[]>> = {
     Rules: ["Rulebook", "Audit"],
     Help: ["About"],
   },
-  INTEGRATOR: { Registry: ["Codes", "Search", "Change notices"], Help: ["About"] },
+  INTEGRATOR: {
+    Registry: ["Codes", "Search", "Create material (SAP)", "Change notices"],
+    Help: ["About"],
+  },
 };
 
 describe("role filtering (App Flow 3.2)", () => {
@@ -145,11 +148,14 @@ describe("role filtering (App Flow 3.2)", () => {
     expect(got).toEqual(APP_FLOW_3_2[role]);
   });
 
-  it("an INTEGRATOR sees two items once built; today the registry codes and notices", () => {
+  it("an INTEGRATOR sees two items: the registry side and Help", () => {
     expect(visibleNav(false, "INTEGRATOR", NAV_ITEMS, everything)).toHaveLength(2);
     expect(
       visibleNav(false, "INTEGRATOR").map((i) => [i.label, i.tabs.map((t) => t.label)]),
-    ).toEqual([["Registry", ["Codes", "Change notices"]]]);
+    ).toEqual([
+      ["Registry", ["Codes", "Search", "Create material (SAP)", "Change notices"]],
+      ["Help", ["About"]],
+    ]);
   });
 
   it("the developer switch never shows a tab the role may not see", () => {

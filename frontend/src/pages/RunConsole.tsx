@@ -211,9 +211,41 @@ export function RunConsole() {
             ))}
             {!s.channels?.D && (
               <p className="mt-1 text-micro text-muted">
-                Meaning search (AI) is switched on in a later step.
+                Meaning search (AI) is off for this run; rules and text search found these pairs.
               </p>
             )}
+          </Card>
+        </div>
+      )}
+
+      {!!(s.classified_by_ml || s.ai_records_asked) && (
+        <div className="mb-5">
+          <Card
+            title="What AI did in this run"
+            hint="AI reads and proposes; a value counts only if it is written in the record text and allowed by the rulebook. Rules still decide."
+          >
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <AiFact
+                label="Category guessed by AI"
+                value={s.classified_by_ml}
+                sub="records with no category word"
+              />
+              <AiFact
+                label="Records read by AI"
+                value={s.ai_records_asked}
+                sub={s.ai_provider ?? "off"}
+              />
+              <AiFact
+                label="Values accepted"
+                value={s.ai_values_accepted}
+                sub="found in the text, allowed"
+              />
+              <AiFact
+                label="Values rejected"
+                value={s.ai_values_rejected}
+                sub="not in the text or not allowed"
+              />
+            </div>
           </Card>
         </div>
       )}
@@ -407,6 +439,18 @@ function RecordCell({ cpse, code, text }: { cpse: string; code: string; text: st
         <span className="font-mono text-micro text-muted">{code}</span>
       </span>
       <span className="mt-0.5 block font-mono text-micro text-text">{text}</span>
+    </div>
+  );
+}
+
+function AiFact({ label, value, sub }: { label: string; value?: number | null; sub: string }) {
+  return (
+    <div className="rounded-lg bg-ai-bg px-3 py-2">
+      <span className="block text-label text-ai-fg">{label}</span>
+      <span className="tabular block text-h2 text-text">
+        {value === undefined || value === null ? "–" : formatCount(value)}
+      </span>
+      <span className="block text-micro text-muted">{sub}</span>
     </div>
   );
 }

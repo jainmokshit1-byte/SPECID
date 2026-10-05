@@ -24,12 +24,16 @@ function event(id: number, patch: Partial<AuditEvent> = {}): AuditEvent {
   };
 }
 
-describe("sidebar with Home, Data, Review, Registry, Audit and Users built", () => {
+describe("sidebar by role, every screen built", () => {
   it.each([
-    ["ADMIN", ["Home", "Data", "Registry", "Rules"], ["Audit", "Users"]],
-    ["AUDITOR", ["Home", "Registry", "Rules"], ["Audit"]],
-    ["MAKER", ["Home", "Data", "Review", "Registry"], null],
-    ["CHECKER", ["Home", "Data", "Review", "Registry"], null],
+    [
+      "ADMIN",
+      ["Home", "Data", "Review", "Registry", "Results", "Rules", "Help"],
+      ["Rulebook", "Audit", "Users"],
+    ],
+    ["AUDITOR", ["Home", "Review", "Registry", "Results", "Rules", "Help"], ["Rulebook", "Audit"]],
+    ["MAKER", ["Home", "Data", "Review", "Registry", "Results", "Rules", "Help"], null],
+    ["CHECKER", ["Home", "Data", "Review", "Registry", "Results", "Rules", "Help"], null],
   ] as const)("%s sees %j", async (role, items, ruleTabs) => {
     signIn(role, {
       handle: (u) => (u.includes("/audit") ? json({ items: [], next_cursor: null }) : undefined),
@@ -45,11 +49,11 @@ describe("sidebar with Home, Data, Review, Registry, Audit and Users built", () 
           .map((t) => t.textContent),
       ).toEqual(ruleTabs);
     } else {
-      expect(section).toBeNull(); // one visible tab → no tab bar (Rulebook not built yet)
+      expect(section).toBeNull(); // Home has one tab → no tab bar
     }
     if (ruleTabs) {
       fireEvent.click(within(screen.getByRole("navigation", { name: "Main" })).getByText("Rules"));
-      await waitFor(() => expect(location()).toBe("/audit"));
+      await waitFor(() => expect(location()).toBe("/templates"));
     }
   });
 
