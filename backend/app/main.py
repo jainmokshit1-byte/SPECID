@@ -8,6 +8,7 @@ import logging
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from urllib.parse import urlsplit
 
 import structlog
 from fastapi import FastAPI, Request, Response
@@ -27,6 +28,7 @@ from app.api import (
     review,
     runs,
     system,
+    templates,
     users,
 )
 from app.core.templates import load_dictionary, load_templates
@@ -56,6 +58,9 @@ def configure_logging(level: str) -> None:
 def allowed_hosts(settings: Settings) -> list[str]:
     """Database, local model server and (hosted demo only) the Gemini API (DEC-41)."""
     hosts = [settings.db_host, settings.ollama_host]
+    db_host = urlsplit(settings.database_url).hostname  # a hosted database, e.g. Neon (DEC-43)
+    if db_host:
+        hosts.append(db_host)
     if settings.ai_provider == "gemini":
         hosts.append(GEMINI_HOST)
     return hosts
@@ -80,17 +85,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         session.commit()
     if interrupted:
         structlog.get_logger().warning("runs_interrupted_by_restart", count=interrupted)
-    if settings.demo_mode:  # DEC-42: prepare demo data in the background
-        demo.start_bootstrap(app.state, settings)
     # TR-OPS-02, FR-401: an invalid template YAML aborts startup with file and line
     app.state.templates = load_templates(settings.template_dir)
     app.state.dictionary = load_dictionary(settings.template_dir)
-    app.state.classifier = (
-        default_classifier(app.state.dictionary) if settings.classifier_enabled else None
-    )
     structlog.get_logger().info(
         "templates_loaded", templates={t.id: t.version for t in app.state.templates.values()}
     )
+    app.state.classifier = None
+    if settings.demo_mode:  # DEC-42/43: classifier and demo data in the background, port opens now
+        demo.start_bootstrap(app.state, settings)
+    elif settings.classifier_enabled:
+        app.state.classifier = default_classifier(app.state.dictionary)
     yield
     jobs.shutdown()
     guard = egress.current_guard()
@@ -145,3 +150,4 @@ app.include_router(registry.router, prefix=API_PREFIX)
 app.include_router(insights.router, prefix=API_PREFIX)
 app.include_router(evaluation.router, prefix=API_PREFIX)
 app.include_router(system.router, prefix=API_PREFIX)
+app.include_router(templates.router, prefix=API_PREFIX)

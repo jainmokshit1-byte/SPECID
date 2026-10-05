@@ -1,0 +1,42 @@
+# Render Blueprint for the SpecID cloud demo API (DEC-43). Free plan: 512 MB, sleeps when idle.
+# Database: Neon (free Postgres with pgvector). Frontend: Netlify (netlify.toml proxies /api here).
+# Values marked sync: false are typed in the Render dashboard; never commit them.
+services:
+  - type: web
+    name: specid-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./deploy/render.Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    autoDeploy: false
+    envVars:
+      - key: DATABASE_URL          # Neon connection string, e.g. postgresql://...neon.tech/neondb?sslmode=require
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DEMO_PASSWORD         # password for the seeded users (the demo buttons need none)
+        sync: false
+      - key: GEMINI_API_KEY        # leave empty until you have it; then set AI_PROVIDER=gemini
+        sync: false
+      - key: AI_PROVIDER
+        value: "off"
+      - key: DEMO_MODE
+        value: "true"
+      - key: DEMO_ENTITIES
+        value: "400"
+      - key: JOB_MODE
+        value: thread
+      - key: OFFLINE
+        value: "false"
+      - key: EGRESS_GUARD_ENABLED
+        value: "true"
+      - key: SEED_DEMO_USERS
+        value: "true"
+      - key: CONSENT_MODE
+        value: ALL_PARTICIPANTS
+      - key: CORS_ORIGIN            # your Netlify site URL
+        value: https://specid-demo.netlify.app
+      - key: LOG_LEVEL
+        value: INFO

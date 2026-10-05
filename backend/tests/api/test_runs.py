@@ -388,3 +388,23 @@ def test_a_run_with_an_ai_provider_uses_meaning_search_and_the_reader(
     assert s["ai_records_asked"] > 0 and fake.asked > 0
     assert s["ai_values_accepted"] == 0  # the fake read nothing: nothing was invented
     assert run["config"]["dense_enabled"] is True
+
+
+def test_job_mode_thread_runs_a_job_in_the_api_process(
+    client: TestClient, ids: Ids, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """JOB_MODE=thread (DEC-43, small free servers): no worker process, same result."""
+    from app.settings import get_settings
+
+    monkeypatch.setattr(get_settings(), "job_mode", "thread")
+    batches = ingest_all(client)
+    run = start(client, batches)
+    deadline = time.time() + 180
+    got: dict[str, Any] = run
+    h = login(client, "meera")
+    while time.time() < deadline and got["status"] in ("QUEUED", "RUNNING"):
+        time.sleep(1)
+        got = client.get(f"/api/v1/runs/{run['id']}", headers=h).json()
+    assert got["status"] == "DONE", got
+    assert jobs._pool is None and jobs._threads is not None
+    jobs.shutdown()

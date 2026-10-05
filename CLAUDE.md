@@ -32,7 +32,7 @@ Precedence: `docs/SOLUTION.md` + `docs/BUILD_PLAN.md` > migrations (database) > 
 1. `core/` is pure: no imports from `services/`, `api/`, `db/`, `ai/`, FastAPI, SQLAlchemy, psycopg or HTTP clients.
 2. **No score, ML model or LLM may override a veto or produce a verdict.** `decide()` stays deterministic and symmetric. An LLM may only *propose* attribute values with a source span; a value is used only if it passes the grounding check (span in the text, value in the template domain, the rule parser reads the span the same way). Classifier output abstains below its threshold.
 3. Never edit golden tests to make them pass; fix the code or ask. New golden cases go in new entries or files.
-4. **Offline at runtime:** no CDN links, no web fonts, no telemetry, no runtime downloads, no hosted LLM APIs. Local models only (Ollama). Fonts and icons are bundled. Downloads happen only in `make models` (setup).
+4. **Offline at runtime (on-premise build):** no CDN links, no web fonts, no telemetry, no runtime downloads, no hosted LLM APIs. Fonts and icons are bundled. The one exception is the **hosted cloud demo** (`DEMO_MODE=true`, synthetic data only), which may use the Gemini provider (`AI_PROVIDER=gemini`, DEC-41/43); the egress guard still blocks every other host, and the footer must say "Cloud demo", never "Air-gapped".
 5. Database changes only through Alembic migrations in `backend/app/db/migrations/versions/`; `models.py` must match the migrated DB (`test_models_match_db.py`).
 6. Every state-changing action writes an audit event in the same transaction.
 7. Maker ≠ checker; a multi-CPSE cluster gets a CNMC only after every participating CPSE consents (`CONSENT_MODE=ALL_PARTICIPANTS`).

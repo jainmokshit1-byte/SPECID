@@ -17,13 +17,14 @@ from typing import Any
 
 import structlog
 import yaml
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import Connection, create_engine, text
 
 from app.db.migrate import upgrade_head
 from app.schemas.jsonb import DICTIONARY_CONTENT, TemplateDefinition, UomContent
 from app.security.auth import hash_password
+from app.settings import psycopg_url
 
 SECTOR = "Oil & Gas"
 CPSES = [  # synthetic organisations, never real CPSE names
@@ -63,6 +64,11 @@ class SeedSettings(BaseSettings):
     template_dir: Path = Path("/app/templates")
     seed_demo_users: bool = True
     demo_password: str = Field(min_length=8)
+
+    @field_validator("database_url")
+    @classmethod
+    def _psycopg(cls, v: str) -> str:
+        return psycopg_url(v)
 
 
 @dataclass

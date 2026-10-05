@@ -7,7 +7,7 @@ dictionary. Tests set `INLINE` to run the job in the calling thread.
 """
 
 import uuid
-from concurrent.futures import Future, ProcessPoolExecutor
+from concurrent.futures import Future, ProcessPoolExecutor, ThreadPoolExecutor
 from multiprocessing.sharedctypes import Synchronized
 from typing import Any
 
@@ -20,6 +20,7 @@ log = structlog.get_logger()
 
 INLINE = False  # tests: run the job synchronously in the caller (same process, same database)
 _pool: ProcessPoolExecutor | None = None
+_threads: ThreadPoolExecutor | None = None  # JOB_MODE=thread (DEC-43)
 _worker: dict[str, Any] = {}
 
 
@@ -77,11 +78,13 @@ def _executor() -> ProcessPoolExecutor:
 def submit(
     run_id: uuid.UUID, templates: Any = None, dictionary: Any = None, classifier: Any = None
 ) -> Future[None] | None:
-    """Queue a run. With `INLINE` it runs now, in this process, with the app's templates."""
-    if INLINE:
+    """Queue a run. With `INLINE` it runs now, in this process, with the app's templates; with
+    JOB_MODE=thread it runs in one background thread of this process (small servers, DEC-43)."""
+    from app.settings import get_settings
+
+    def in_process() -> None:
         from app.db.session import get_session_factory
         from app.services import harmonise
-        from app.settings import get_settings
 
         harmonise.execute(
             get_session_factory(),
@@ -91,8 +94,17 @@ def submit(
             settings=get_settings(),
             classifier=classifier,
         )
+
+    if INLINE:
+        in_process()
         return None
-    future = _executor().submit(run_job, str(run_id))
+    if get_settings().job_mode == "thread":
+        global _threads
+        if _threads is None:
+            _threads = ThreadPoolExecutor(max_workers=1, thread_name_prefix="specid-job")
+        future = _threads.submit(in_process)
+    else:
+        future = _executor().submit(run_job, str(run_id))
     future.add_done_callback(
         lambda f: f.exception() and log.error("job_crashed", error=repr(f.exception()))
     )
@@ -100,7 +112,10 @@ def submit(
 
 
 def shutdown() -> None:
-    global _pool
+    global _pool, _threads
+    if _threads is not None:
+        _threads.shutdown(wait=False, cancel_futures=True)
+        _threads = None
     if _pool is not None:
         _pool.shutdown(wait=False, cancel_futures=True)
         _pool = None

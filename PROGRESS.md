@@ -2,7 +2,7 @@
 
 Plan: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) · Product: [docs/SOLUTION.md](docs/SOLUTION.md) · Decisions: [docs/DECISIONS.md](docs/DECISIONS.md) · v1 history (Phases 1–4): [docs/history/PROGRESS_v1.md](docs/history/PROGRESS_v1.md)
 
-**Branch:** `v2-go1` · **Now:** Go 1, chunk 5 (search-before-create, Look-alike Guard, dashboard, end-to-end proof next) · chunks 1–4 done 5 Oct · Known issue: motor type `AC` vs `AC-IND` still conflicts (DEC-34).
+**Branch:** `v2-go1` · **Now:** product complete (every App Flow screen built); free cloud deployment prepared (docs/DEPLOY.md), waiting for the user's accounts and Gemini key · Known issue: motor type `AC` vs `AC-IND` still conflicts (DEC-34).
 
 ## Starting point (5 Oct 2026)
 
@@ -24,9 +24,11 @@ v1 Phases 1–4 done (gate G1, tag `gate-1`): pure engine (`core/`), schema v0.6
 | 4 | 1.8 | Review: queue, cluster review, pair modal, maker ≠ checker | done |
 | 4 | 1.9 | Consent, CNMC issuance, change notices | done |
 | 4 | 1.10 | Registry, exports, migration pack | done |
-| 5 | 1.11 | Search-before-create | |
-| 5 | 1.12 | Look-alike Guard, dashboard v1 | |
-| 5 | 1.14 | End-to-end proof, CLICK_TEST.md | |
+| 5 | 1.11 | Search-before-create (API + S9 + S14 SAP simulation) | done |
+| 5 | 1.12 | Look-alike Guard, dashboard, savings & pooling | done |
+| 5 | 2.1–2.4 | AI: classifier (in app), verified Gemini reader, meaning search; placeholder key | done (Gemini untested until the key arrives) |
+| 5 | 2.8 | Evaluation with bounds and baselines (S11), honesty panel, About (S17), Rulebook (S10) | done |
+| 5 | deploy | Demo mode, Neon + Render + Netlify files, 512 MB rehearsal | done (not deployed: needs the user's accounts) |
 
 ## Log
 
@@ -42,3 +44,6 @@ v1 Phases 1–4 done (gate G1, tag `gate-1`): pure engine (`core/`), schema v0.6
 | 2026-10-05 | 1.6 | Design system: buttons, cards, badges, meters, health ring, stepper, states, drop zone, logo; light/dark/system + stage mode (DEC-38) |
 | 2026-10-05 | 1.7 | Screens S2 upload & mapping, S3 quality, S4 runs / new run / live console; Home follows the data; 127 frontend tests (DEC-38) |
 | 2026-10-05 | 1.8–1.10 | Review → maker/checker → multi-CPSE consent → CNMC issuance → registry, exports, migration pack, change notices; live demo flow issued NMC-00000000018; backend 818, frontend 135 tests (DEC-39, DEC-40) |
+| 2026-10-05 | 1.11–1.12, 2.1–2.4 | Search-before-create, dashboard with price gaps and stock sharing, Look-alike Guard, classifier, verified reader, meaning search (DEC-41) |
+| 2026-10-05 | 2.8 | Seeded evaluation with Wilson bound and B1/B2 baselines; demo login + bootstrap (DEC-42) |
+| 2026-10-05 | final | All screens built (S0 dashboard, S9, S10a/b + `GET /templates`, S11a/b, S13, S14, S15, S17); demo sign-in buttons; cloud footer never says air-gapped; JOB_MODE=thread; Neon URL accepted as is; render.yaml, netlify.toml, deploy/render.Dockerfile, docs/DEPLOY.md; bootstrap ordering fix (DEC-43) |

@@ -54,6 +54,10 @@ def start_bootstrap(app_state: Any, settings: Any) -> None:
 
 def _bootstrap_safe(app_state: Any, settings: Any) -> None:
     try:
+        if settings.classifier_enabled and getattr(app_state, "classifier", None) is None:
+            from app.ai.classifier import default_classifier
+
+            app_state.classifier = default_classifier(app_state.dictionary)
         bootstrap(app_state, settings)
         STATUS["state"] = "ready"
     except Exception as exc:  # the app keeps working; the status says why

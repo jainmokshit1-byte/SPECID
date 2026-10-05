@@ -6,8 +6,17 @@ Additions to Appendix D, logged in docs/DECISIONS.md: consent_mode (DEC-01), git
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def psycopg_url(url: str) -> str:
+    """Accept the URL a hosted Postgres hands out (`postgres://`, `postgresql://`, e.g. Neon) and
+    use the psycopg 3 driver SQLAlchemy needs (DEC-43)."""
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix) :]
+    return url
 
 
 class Settings(BaseSettings):
@@ -40,7 +49,17 @@ class Settings(BaseSettings):
     # hosted demo (DEC-42): one-click role buttons, demo data loaded at start, cloud footer
     demo_mode: bool = False
     demo_entities: int = 1200  # demo data size (lower it on a small free server)
-    git_commit: str = "unknown"
+    # DEC-43: "thread" runs jobs in the API process (one background thread) for small servers
+    job_mode: Literal["process", "thread"] = "process"
+    # Render sets RENDER_GIT_COMMIT itself (DEC-43)
+    git_commit: str = Field(
+        "unknown", validation_alias=AliasChoices("GIT_COMMIT", "RENDER_GIT_COMMIT")
+    )
+
+    @field_validator("database_url")
+    @classmethod
+    def _psycopg(cls, v: str) -> str:
+        return psycopg_url(v)
 
 
 @lru_cache

@@ -19,6 +19,12 @@ make up                   # builds and starts db, api, web
 
 Open http://127.0.0.1:8080. API health: http://127.0.0.1:8080/api/v1/health. OpenAPI: `/api/v1/openapi.json`.
 
+## Cloud demo (free)
+
+Neon (database) + Render (API) + Netlify (web app), synthetic data only, one-click demo roles:
+step by step in [docs/DEPLOY.md](docs/DEPLOY.md). The local stack above is the on-premise,
+air-gapped build.
+
 ## Commands
 
 | Command | Does |
