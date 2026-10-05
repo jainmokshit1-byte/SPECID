@@ -10,7 +10,7 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "https://specid-api.onrender.com/api/:splat"
+  to = "https://specid.onrender.com/api/:splat"
   status = 200
   force = true
 
