@@ -18,7 +18,7 @@ v1 Phases 1–4 done (gate G1, tag `gate-1`): pure engine (`core/`), schema v0.6
 | 2 | 1.3 | Ingest: upload, SAP preset, UoM, quality report, health score | done |
 | 2 | 1.4 | Candidates: blocking, BM25, MPN; pair completeness | done |
 | 2 | 1.5 | Run engine: background job, progress, cancel, stats | |
-| 2 | 1.13 | Egress guard + `/system/airgap` | |
+| 2 | 1.13 | Egress guard + `/system/airgap` | done |
 | 3 | 1.6 | Frontend design system | |
 | 3 | 1.7 | Screens S2, S3, S4 | |
 | 4 | 1.8 | Review: queue, cluster review, pair modal, maker ≠ checker | |
@@ -37,3 +37,4 @@ v1 Phases 1–4 done (gate G1, tag `gate-1`): pure engine (`core/`), schema v0.6
 | 2026-10-05 | 1.2 | Dictionary v2: spelling repair (DEV-6), face phrases, STD/XS without size unknown (DEV-7), migration 0003; seed-7: true matches found 897 → 1,344, can't-tell 1,265 → 822, false vetoes 4 → 0, false merges 0; 564 backend tests (DEC-34) |
 | 2026-10-05 | 1.3 | Ingest: /batches upload, mapping suggestions (SAP preset), ingest with specs, quality report + health score, purchase history (DEC-35) |
 | 2026-10-05 | 1.4 | Candidates: blocking + BM25 + MPN (+dense hook); seed-7 reach 98.1% of categorised true pairs at k=200 (DEC-36) |
+| 2026-10-05 | 1.13 | Egress guard (blocks and counts, shared counter), /system/airgap, health reports it truthfully |

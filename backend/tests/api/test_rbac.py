@@ -28,6 +28,7 @@ ENDPOINTS: dict[tuple[str, str], Action | str] = {
     ("POST", "/api/v1/users/{user_id}/disable"): Action.MANAGE_USERS,
     ("GET", "/api/v1/audit"): Action.VIEW_AUDIT,
     ("GET", "/api/v1/audit/verify"): Action.VIEW_AUDIT,
+    ("GET", "/api/v1/system/airgap"): SIGNED_IN,
     ("POST", "/api/v1/batches"): Action.UPLOAD_BATCHES,
     ("GET", "/api/v1/batches"): Action.VIEW_CLUSTERS,
     ("GET", "/api/v1/batches/{batch_id}"): Action.VIEW_CLUSTERS,

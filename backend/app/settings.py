@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     jwt_expire_min: int = 480
     offline: bool = True
     egress_guard_enabled: bool = True
+    ollama_host: str = ""  # local model server host name, allowed through the egress guard
     embeddings_enabled: bool = True
     llm_enabled: bool = False
     auto_eligible_enabled: bool = False

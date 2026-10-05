@@ -37,7 +37,7 @@ def test_blocking_pairs_same_category_and_size_across_cpses() -> None:
 
 
 def test_pressure_class_is_not_a_blocking_key() -> None:
-    """CL150 and CL300 valves of one size must meet, so the veto and the Look-alike Guard see them."""
+    """CL150 and CL300 valves of one size must meet: the veto and the Look-alike Guard see them."""
     a = CandRecord("a", "A", "VALVE", 100, "VALVE GATE 4 IN CL150")
     b = CandRecord("b", "B", "VALVE", 100, "VALVE GATE 4 IN CL300")
     assert generate([a, b], CROSS) == {("a", "b"): CHANNEL_B}
@@ -109,7 +109,8 @@ def test_exact_maker_and_part_number_always_pair() -> None:
 
 
 def test_dense_neighbours_are_filtered_by_category_and_mode() -> None:
-    recs = [rec("a", "A", "VALVE", None), rec("b", "B", "VALVE", None), rec("c", "A", "VALVE", None),
+    recs = [rec("a", "A", "VALVE", None), rec("b", "B", "VALVE", None),
+            rec("c", "A", "VALVE", None),
             rec("d", "B", "PIPE", None)]  # fmt: skip
     dense = {"a": ["b", "c", "d", "zzz"], "d": ["a"]}
     pairs = generate(recs, CandidateConfig(bm25_k=0), dense)

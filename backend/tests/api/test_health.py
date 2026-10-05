@@ -23,8 +23,8 @@ def test_health_ok_with_database() -> None:
     assert body["status"] == "ok"
     assert body["db"] == "ok"
     assert body["consent_mode"] in ("ALL_PARTICIPANTS", "NONE")
-    # the egress guard arrives in Phase 5 and is never claimed early
-    assert body["egress_guard"]["installed"] is False
+    # reported as installed only when it really is (the app installs it at startup)
+    assert body["egress_guard"]["installed"] == get_settings().egress_guard_enabled
     assert "git_commit" in body
 
 

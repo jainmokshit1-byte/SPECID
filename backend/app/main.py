@@ -13,9 +13,10 @@ import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import audit, auth, batches, errors, health, users
+from app.api import audit, auth, batches, errors, health, system, users
 from app.core.templates import load_dictionary, load_templates
 from app.db.migrate import upgrade_head
+from app.security import egress
 from app.settings import get_settings
 
 API_PREFIX = "/api/v1"
@@ -39,6 +40,8 @@ def configure_logging(level: str) -> None:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()  # fails fast on missing or short JWT_SECRET (TR-SEC-02)
     configure_logging(settings.log_level)
+    if settings.egress_guard_enabled:  # TR-SEC-05: before anything else can open a socket
+        egress.install_guard([settings.db_host, settings.ollama_host])
     structlog.get_logger().info(
         "startup",
         git_commit=settings.git_commit,
@@ -54,6 +57,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         "templates_loaded", templates={t.id: t.version for t in app.state.templates.values()}
     )
     yield
+    guard = egress.current_guard()
+    if guard is not None:
+        guard.uninstall()
 
 
 app = FastAPI(
@@ -97,3 +103,4 @@ app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(users.router, prefix=API_PREFIX)
 app.include_router(audit.router, prefix=API_PREFIX)
 app.include_router(batches.router, prefix=API_PREFIX)
+app.include_router(system.router, prefix=API_PREFIX)
