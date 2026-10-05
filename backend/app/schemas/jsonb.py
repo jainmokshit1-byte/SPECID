@@ -170,6 +170,12 @@ class RunStats(Strict):
     blocked_edges: int | None = None
     timings_ms: dict[str, int] | None = None
     blocked_egress: int | None = None
+    # v2 AI (DEC-41)
+    ai_provider: str | None = None
+    ai_records_asked: int | None = None
+    ai_values_accepted: int | None = None
+    ai_values_rejected: int | None = None
+    dense_pairs: int | None = None
 
 
 # ----- pair_decision -----

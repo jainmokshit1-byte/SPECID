@@ -330,9 +330,10 @@ def test_the_real_worker_process_runs_a_job(client: TestClient, ids: Ids) -> Non
     assert run["status"] == "QUEUED"
     deadline = time.time() + 180
     got: dict[str, Any] = run
+    h = login(client, "meera")  # one sign-in: the login rate limit is 5 per minute
     while time.time() < deadline and got["status"] in ("QUEUED", "RUNNING"):
         time.sleep(1)
-        got = client.get(f"/api/v1/runs/{run['id']}", headers=login(client, "meera")).json()
+        got = client.get(f"/api/v1/runs/{run['id']}", headers=h).json()
     assert got["status"] == "DONE", got
     assert got["stats"]["candidate_pairs"] > 0 and got["stats"]["blocked_egress"] >= 0
     jobs.shutdown()
@@ -344,3 +345,46 @@ def test_start_and_read_runs_need_the_right_roles(client: TestClient, ids: Ids) 
     assert client.get("/api/v1/runs", headers=login(client, "auditor")).status_code == 200
     r = client.post("/api/v1/runs", headers=login(client, "auditor"), json={"batch_ids": []})
     assert r.status_code == 403
+
+
+def test_a_run_with_an_ai_provider_uses_meaning_search_and_the_reader(
+    client: TestClient, ids: Ids, inline: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """DEC-41: with a provider (a fake here, Gemini in the hosted demo) the dense channel adds
+    pairs and the reader is asked about unknown key values; verdicts still come from the rules."""
+    import hashlib
+
+    from app.settings import get_settings
+
+    class FakeAI:
+        name = "fake"
+        model = embed_model = "fake"
+
+        def __init__(self) -> None:
+            self.asked = 0
+
+        def embed(self, texts: Any) -> list[list[float]]:
+            out = []
+            for t in texts:
+                v = [
+                    b / 255
+                    for b in hashlib.sha256(" ".join(sorted(set(t.split()))).encode()).digest()
+                ]
+                n = sum(x * x for x in v) ** 0.5
+                out.append([x / n for x in v])
+            return out
+
+        def generate_json(self, prompt: str) -> Any:
+            self.asked += 1
+            return {"items": []}
+
+    fake = FakeAI()
+    monkeypatch.setattr(harmonise, "make_provider", lambda s: fake)
+    monkeypatch.setattr(get_settings(), "ai_provider", "gemini")
+    run = start(client, ingest_all(client))
+    s = run["stats"]
+    assert run["status"] == "DONE" and s["ai_provider"] == "fake"
+    assert s["channels"]["D"] > 0 and s["dense_pairs"] > 0
+    assert s["ai_records_asked"] > 0 and fake.asked > 0
+    assert s["ai_values_accepted"] == 0  # the fake read nothing: nothing was invented
+    assert run["config"]["dense_enabled"] is True

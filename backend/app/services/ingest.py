@@ -372,6 +372,7 @@ def ingest_batch(
     templates: Mapping[str, Template],
     threshold: float,
     upload_dir: str,
+    model: Any = None,
 ) -> BatchQuality:
     """Ingest the saved mapping (idempotent: an ingested batch returns its quality again)."""
     cpse = session.get(Cpse, batch.cpse_id)
@@ -450,7 +451,7 @@ def ingest_batch(
     completeness: list[float] = []
     rows_for_specs = []
     for rec in texts:
-        spec = build_spec(rec, dictionary, threshold)
+        spec = build_spec(rec, dictionary, threshold, model)
         rows_for_specs.append(spec_row(rec, spec, templates, dictionary))
         categories[spec.category or "UNRECOGNISED"] += 1
         t = templates.get(spec.category or "")

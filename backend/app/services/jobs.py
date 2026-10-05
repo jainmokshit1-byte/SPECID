@@ -26,21 +26,25 @@ _worker: dict[str, Any] = {}
 # ---- in the worker process ---------------------------------------------------------------
 def worker_init(counter: "Synchronized[int]") -> None:
     """Runs once in the spawned worker: guard, logging, engine, templates (own copies)."""
+    from app.ai.classifier import default_classifier
     from app.core.templates import load_dictionary, load_templates
     from app.db.session import get_session_factory
-    from app.main import configure_logging
+    from app.main import allowed_hosts, configure_logging
     from app.security import egress
     from app.settings import get_settings
 
     settings = get_settings()
     configure_logging(settings.log_level)
     if settings.egress_guard_enabled:
-        egress.install_guard([settings.db_host, settings.ollama_host], counter)
+        egress.install_guard(allowed_hosts(settings), counter)
     _worker.update(
         settings=settings,
         factory=get_session_factory(),
         templates=load_templates(settings.template_dir),
         dictionary=load_dictionary(settings.template_dir),
+    )
+    _worker["classifier"] = (
+        default_classifier(_worker["dictionary"]) if settings.classifier_enabled else None
     )
 
 
@@ -53,6 +57,7 @@ def run_job(run_id: str) -> None:
         templates=_worker["templates"],
         dictionary=_worker["dictionary"],
         settings=_worker["settings"],
+        classifier=_worker["classifier"],
     )
 
 
@@ -69,7 +74,9 @@ def _executor() -> ProcessPoolExecutor:
     return _pool
 
 
-def submit(run_id: uuid.UUID, templates: Any = None, dictionary: Any = None) -> Future[None] | None:
+def submit(
+    run_id: uuid.UUID, templates: Any = None, dictionary: Any = None, classifier: Any = None
+) -> Future[None] | None:
     """Queue a run. With `INLINE` it runs now, in this process, with the app's templates."""
     if INLINE:
         from app.db.session import get_session_factory
@@ -82,6 +89,7 @@ def submit(run_id: uuid.UUID, templates: Any = None, dictionary: Any = None) -> 
             templates=templates,
             dictionary=dictionary,
             settings=get_settings(),
+            classifier=classifier,
         )
         return None
     future = _executor().submit(run_job, str(run_id))

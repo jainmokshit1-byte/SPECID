@@ -122,6 +122,7 @@ def ingest_batch(
         templates=_templates(request),
         threshold=settings.classifier_threshold,
         upload_dir=settings.upload_dir,
+        model=getattr(request.app.state, "classifier", None),
     )
     session.commit()
     return _out(session, batch)

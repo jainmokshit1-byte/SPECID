@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     cors_origin: str = "http://127.0.0.1:8080"
     log_level: str = "INFO"
     consent_mode: Literal["ALL_PARTICIPANTS", "NONE"] = "ALL_PARTICIPANTS"
+    # AI (DEC-41): the local classifier needs no key; Gemini is for the hosted demo only
+    classifier_enabled: bool = True
+    ai_provider: Literal["off", "gemini"] = "off"
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
+    gemini_embed_model: str = "gemini-embedding-001"
+    ai_reader_max_records: int = 400  # per run, to stay inside the free tier
+    # hosted demo (DEC-42): one-click role buttons, demo data loaded at start, cloud footer
+    demo_mode: bool = False
     git_commit: str = "unknown"
 
 

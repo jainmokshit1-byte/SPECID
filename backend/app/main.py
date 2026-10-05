@@ -13,13 +13,27 @@ import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import audit, auth, batches, errors, health, registry, review, runs, system, users
+from app.ai.classifier import default_classifier
+from app.ai.provider import GEMINI_HOST
+from app.api import (
+    audit,
+    auth,
+    batches,
+    errors,
+    health,
+    insights,
+    registry,
+    review,
+    runs,
+    system,
+    users,
+)
 from app.core.templates import load_dictionary, load_templates
 from app.db.migrate import upgrade_head
 from app.db.session import get_session_factory
 from app.security import egress
 from app.services import jobs
-from app.settings import get_settings
+from app.settings import Settings, get_settings
 
 API_PREFIX = "/api/v1"
 
@@ -38,12 +52,20 @@ def configure_logging(level: str) -> None:
     )
 
 
+def allowed_hosts(settings: Settings) -> list[str]:
+    """Database, local model server and (hosted demo only) the Gemini API (DEC-41)."""
+    hosts = [settings.db_host, settings.ollama_host]
+    if settings.ai_provider == "gemini":
+        hosts.append(GEMINI_HOST)
+    return hosts
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()  # fails fast on missing or short JWT_SECRET (TR-SEC-02)
     configure_logging(settings.log_level)
     if settings.egress_guard_enabled:  # TR-SEC-05: before anything else can open a socket
-        egress.install_guard([settings.db_host, settings.ollama_host])
+        egress.install_guard(allowed_hosts(settings))
     structlog.get_logger().info(
         "startup",
         git_commit=settings.git_commit,
@@ -60,6 +82,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # TR-OPS-02, FR-401: an invalid template YAML aborts startup with file and line
     app.state.templates = load_templates(settings.template_dir)
     app.state.dictionary = load_dictionary(settings.template_dir)
+    app.state.classifier = (
+        default_classifier(app.state.dictionary) if settings.classifier_enabled else None
+    )
     structlog.get_logger().info(
         "templates_loaded", templates={t.id: t.version for t in app.state.templates.values()}
     )
@@ -114,4 +139,5 @@ app.include_router(batches.router, prefix=API_PREFIX)
 app.include_router(runs.router, prefix=API_PREFIX)
 app.include_router(review.router, prefix=API_PREFIX)
 app.include_router(registry.router, prefix=API_PREFIX)
+app.include_router(insights.router, prefix=API_PREFIX)
 app.include_router(system.router, prefix=API_PREFIX)

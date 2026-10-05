@@ -71,7 +71,7 @@ def start_run(
         dictionary=dictionary,
     )
     session.commit()  # the job reads the run from the database
-    jobs.submit(run.id, templates, dictionary)
+    jobs.submit(run.id, templates, dictionary, getattr(request.app.state, "classifier", None))
     session.refresh(run)
     return _out(session, run)
 

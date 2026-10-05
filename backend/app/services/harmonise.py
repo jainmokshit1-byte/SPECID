@@ -28,6 +28,9 @@ import structlog
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.ai import dense as dense_ai
+from app.ai import reader as ai_reader
+from app.ai.provider import AIError, make_provider
 from app.core.baselines import b1, b2
 from app.core.candidates import (
     CandidateConfig,
@@ -81,7 +84,7 @@ def default_config(
         "mode": mode,
         "seed": 0,
         "bm25_k": CandidateConfig.bm25_k,
-        "dense_enabled": False,  # the meaning-search channel arrives with WP2.2
+        "dense_enabled": settings.ai_provider != "off",  # meaning search needs embeddings
         "dense_k": CandidateConfig.dense_k,
         "block_cap": CandidateConfig.block_cap,
         "classifier_threshold": settings.classifier_threshold,
@@ -92,8 +95,8 @@ def default_config(
         "templates": {t.id: t.version for t in templates.values()},
         "dictionary_version": dictionary.version,
         "uom_table_version": dictionary.uom_version,
-        "embedding_model": "none",
-        "classifier_model": "rules",
+        "embedding_model": settings.gemini_embed_model if settings.ai_provider != "off" else "none",
+        "classifier_model": "rules + char-ngram-lr-v1" if settings.classifier_enabled else "rules",
         "git_commit": settings.git_commit,
         **o,
     }
@@ -213,7 +216,11 @@ def _json(value: Any) -> str:
 
 
 def _load_records(
-    session: Session, batch_ids: Sequence[uuid.UUID], dictionary: Dictionary, threshold: float
+    session: Session,
+    batch_ids: Sequence[uuid.UUID],
+    dictionary: Dictionary,
+    threshold: float,
+    model: Any = None,
 ) -> list[Rec]:
     rows = session.execute(
         text("""
@@ -234,7 +241,7 @@ def _load_records(
             continue
         seen.add((cpse, code))
         rt = RecordText(rid, record_text(short, long), mpn, maker)
-        spec = build_spec(rt, dictionary, threshold)
+        spec = build_spec(rt, dictionary, threshold, model)
         out.append(
             Rec(
                 rid, cpse, code, short, rt.text, normalise(rt.text, dictionary), mpn, maker,
@@ -276,8 +283,11 @@ def execute(
     dictionary: Dictionary,
     settings: Settings,
     dense: Callable[[Sequence[Rec]], Mapping[str, Sequence[str]]] | None = None,
+    classifier: Any = None,
+    provider: Any = None,
 ) -> None:
     """Run one harmonisation to DONE, or CANCELLED / FAILED (never raises for those)."""
+    provider = provider if provider is not None else make_provider(settings)
     ctl = _Control(factory, run_id)
     with factory() as s:
         run = s.get(Run, run_id)
@@ -290,7 +300,8 @@ def execute(
     t_run = time.perf_counter()
     try:
         with factory() as work:
-            _pipeline(work, ctl, cfg, batch_ids, templates, dictionary, settings, dense)
+            _pipeline(work, ctl, cfg, batch_ids, templates, dictionary, settings, dense,
+                      classifier, provider)  # fmt: skip
             work.commit()
         _finish(factory, run_id, started_by, "DONE", None, ctl, t_run)
     except RunCancelled:
@@ -343,14 +354,19 @@ def _pipeline(
     work: Session, ctl: _Control, cfg: RunConfig, batch_ids: Sequence[uuid.UUID],
     templates: Mapping[str, Template], dictionary: Dictionary, settings: Settings,
     dense_fn: Callable[[Sequence[Rec]], Mapping[str, Sequence[str]]] | None,
+    classifier: Any = None,
+    provider: Any = None,
 ) -> None:  # fmt: skip
     _clear_results(work, ctl.run_id)
 
     # 1 read ------------------------------------------------------------------------------
     t0 = time.perf_counter()
     ctl.update("read", 0, 0)
-    recs = _load_records(work, batch_ids, dictionary, cfg.classifier_threshold)
-    ctl.update("read", 0, len(recs), records=len(recs))
+    recs = _load_records(work, batch_ids, dictionary, cfg.classifier_threshold, classifier)
+    ctl.update("read", 0, len(recs), records=len(recs),
+               ai_provider=provider.name if provider is not None else "off")  # fmt: skip
+    if provider is not None:
+        _ai_read(recs, provider, templates, dictionary, settings, ctl)
     done = 0
     for i in range(0, len(recs), 1000):
         chunk = recs[i : i + 1000]
@@ -381,7 +397,12 @@ def _pipeline(
         )
         for r in recs
     ]  # fmt: skip
-    dense = dense_fn(recs) if (cfg.dense_enabled and dense_fn) else None
+    dense = None
+    if cfg.dense_enabled:
+        if dense_fn is not None:
+            dense = dense_fn(recs)
+        elif provider is not None:
+            dense = _dense(recs, provider, cfg.dense_k, ctl)
     pairs = generate(
         cand_records,
         CandidateConfig(
@@ -444,6 +465,41 @@ def _pipeline(
     t0 = time.perf_counter()
     _cluster(work, ctl, recs, stored, decisions, templates)
     ctl.timings["cluster"] = int((time.perf_counter() - t0) * 1000)
+
+
+def _ai_read(
+    recs: list[Rec], provider: Any, templates: Mapping[str, Template], dictionary: Dictionary,
+    settings: Settings, ctl: _Control,
+) -> None:  # fmt: skip
+    """Verified AI reader on records with a category and a key attribute still unknown."""
+    todo = [i for i, r in enumerate(recs) if ai_reader.missing_core(r.spec, templates)]
+    todo = todo[: settings.ai_reader_max_records]
+    if not todo:
+        return
+    results = ai_reader.read_missing(
+        provider, [(recs[i].text, recs[i].spec) for i in todo], templates, dictionary
+    )
+    accepted = rejected = 0
+    for i, res in zip(todo, results, strict=True):
+        recs[i].spec = res.spec
+        accepted += res.accepted
+        rejected += res.rejected
+    ctl.update("read", len(recs), len(recs), ai_records_asked=len(todo),
+               ai_values_accepted=accepted, ai_values_rejected=rejected)  # fmt: skip
+
+
+def _dense(recs: list[Rec], provider: Any, k: int, ctl: _Control) -> dict[str, list[str]] | None:
+    """Meaning-search neighbours from the provider's embeddings; None when it fails."""
+    try:
+        vectors = provider.embed([r.norm for r in recs])
+    except AIError as exc:
+        log.warning("dense_channel_failed", error=str(exc))
+        return None
+    found = dense_ai.neighbours(
+        [str(r.id) for r in recs], [r.spec.category for r in recs], vectors, k
+    )
+    ctl.stats["dense_pairs"] = sum(len(v) for v in found.values())
+    return found
 
 
 def _cluster(
