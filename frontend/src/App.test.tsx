@@ -110,10 +110,10 @@ describe("app shell (v1.2)", () => {
 });
 
 describe("navigation hides unbuilt screens (default mode)", () => {
-  it("a MAKER sees only built items: Home", async () => {
+  it("a MAKER sees only built items: Home and Data", async () => {
     signIn("MAKER");
     renderAt("/");
-    expect(await sidebarLabels()).toEqual(["Home"]);
+    expect(await sidebarLabels()).toEqual(["Home", "Data"]);
     expect(screen.queryByText("dev")).not.toBeInTheDocument();
   });
 
@@ -123,7 +123,7 @@ describe("navigation hides unbuilt screens (default mode)", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Consent queue" }),
     ).toBeInTheDocument();
-    expect(await sidebarLabels()).toEqual(["Home"]);
+    expect(await sidebarLabels()).toEqual(["Home", "Data"]);
     expect(screen.queryByRole("navigation", { name: "Section" })).not.toBeInTheDocument();
   });
 });
@@ -135,7 +135,8 @@ describe("developer switch shows unbuilt screens, marked dev", () => {
     await screen.findByRole("heading", { level: 1 });
     expect(await sidebarLabels()).toEqual([
       "Home",
-      ...SIDEBAR_LABELS.slice(1).map((l) => `${l}dev`),
+      "Data",
+      ...SIDEBAR_LABELS.slice(2).map((l) => `${l}dev`),
     ]);
     const tabs = within(screen.getByRole("navigation", { name: "Section" })).getAllByRole("link");
     expect(tabs.map((t) => t.textContent)).toEqual([
@@ -156,7 +157,7 @@ describe("developer switch shows unbuilt screens, marked dev", () => {
     expect(await sidebarLabels()).toHaveLength(7);
     document.body.innerHTML = "";
     renderAt("/?dev=0");
-    expect(await sidebarLabels()).toEqual(["Home"]);
+    expect(await sidebarLabels()).toEqual(["Home", "Data"]);
   });
 
   it("VITE_SHOW_UNBUILT=true lists all seven items for a MAKER", async () => {
@@ -171,7 +172,7 @@ describe("developer switch shows unbuilt screens, marked dev", () => {
     vi.stubEnv("VITE_SHOW_UNBUILT", "true");
     signIn("MAKER");
     renderAt("/?dev=1");
-    expect(await sidebarLabels()).toEqual(["Home"]);
+    expect(await sidebarLabels()).toEqual(["Home", "Data"]);
   });
 });
 
@@ -187,8 +188,11 @@ describe("Home Next-step card (App Flow 3.3, DEC-16)", () => {
         FIRST_RUN_STEPS.map((s, i) => `${i + 1}${s}`),
       );
       expect(steps[0]).toHaveAttribute("aria-current", "step");
-      // S2 is not built yet, so the primary button cannot lead to a placeholder.
-      expect(within(card).getByRole("button", { name: "Upload files" })).toBeDisabled();
+      // with no ingested file the next step is S2, which is built: a real link
+      expect(within(card).getByRole("link", { name: "Upload files" })).toHaveAttribute(
+        "href",
+        "/upload",
+      );
       expect(card.textContent).not.toMatch(/\d+ (clusters|national codes)/);
     },
   );

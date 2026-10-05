@@ -2,7 +2,7 @@
 
 Plan: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) · Product: [docs/SOLUTION.md](docs/SOLUTION.md) · Decisions: [docs/DECISIONS.md](docs/DECISIONS.md) · v1 history (Phases 1–4): [docs/history/PROGRESS_v1.md](docs/history/PROGRESS_v1.md)
 
-**Branch:** `v2-go1` · **Now:** Go 1, chunk 3 (frontend design system + screens S2, S3, S4 next) · chunks 1 and 2 done 5 Oct · Known issue: motor type `AC` vs `AC-IND` still conflicts (DEC-34).
+**Branch:** `v2-go1` · **Now:** Go 1, chunk 4 (review, consent, national code, registry next) · chunks 1–3 done 5 Oct · Known issue: motor type `AC` vs `AC-IND` still conflicts (DEC-34).
 
 ## Starting point (5 Oct 2026)
 
@@ -19,8 +19,8 @@ v1 Phases 1–4 done (gate G1, tag `gate-1`): pure engine (`core/`), schema v0.6
 | 2 | 1.4 | Candidates: blocking, BM25, MPN; pair completeness | done |
 | 2 | 1.5 | Run engine: background job, progress, cancel, stats | done |
 | 2 | 1.13 | Egress guard + `/system/airgap` | done |
-| 3 | 1.6 | Frontend design system | |
-| 3 | 1.7 | Screens S2, S3, S4 | |
+| 3 | 1.6 | Frontend design system | done |
+| 3 | 1.7 | Screens S2, S3, S4 | done |
 | 4 | 1.8 | Review: queue, cluster review, pair modal, maker ≠ checker | |
 | 4 | 1.9 | Consent, CNMC issuance, change notices | |
 | 4 | 1.10 | Registry, exports, migration pack | |
@@ -39,3 +39,5 @@ v1 Phases 1–4 done (gate G1, tag `gate-1`): pure engine (`core/`), schema v0.6
 | 2026-10-05 | 1.4 | Candidates: blocking + BM25 + MPN (+dense hook); seed-7 reach 98.1% of categorised true pairs at k=200 (DEC-36) |
 | 2026-10-05 | 1.13 | Egress guard (blocks and counts, shared counter), /system/airgap, health reports it truthfully |
 | 2026-10-05 | 1.5 | Run engine: worker process, progress, cancel, pairs API, clusters; seed-7 3,023 records DONE in 11.2 s, 716 backend tests (DEC-37) |
+| 2026-10-05 | 1.6 | Design system: buttons, cards, badges, meters, health ring, stepper, states, drop zone, logo; light/dark/system + stage mode (DEC-38) |
+| 2026-10-05 | 1.7 | Screens S2 upload & mapping, S3 quality, S4 runs / new run / live console; Home follows the data; 127 frontend tests (DEC-38) |

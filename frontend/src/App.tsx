@@ -7,9 +7,14 @@ import { TooltipProvider } from "./components/ui/Tooltip";
 import { Audit } from "./pages/Audit";
 import { Home } from "./pages/Home";
 import { Login } from "./pages/Login";
+import { NewRun } from "./pages/NewRun";
 import { NoAccess } from "./pages/NoAccess";
 import { NotFound } from "./pages/NotFound";
 import { Placeholder } from "./pages/Placeholder";
+import { Quality } from "./pages/Quality";
+import { RunConsole } from "./pages/RunConsole";
+import { Runs } from "./pages/Runs";
+import { Upload } from "./pages/Upload";
 import { Users } from "./pages/Users";
 import { LOGIN_ROUTE, type RouteDef, SHELL_ROUTES } from "./routes";
 
@@ -18,6 +23,11 @@ const PAGES: Record<string, () => JSX.Element> = {
   "/": Home,
   "/audit": Audit,
   "/admin/users": Users,
+  "/upload": Upload,
+  "/batches/:batchId/quality": Quality,
+  "/runs": Runs,
+  "/runs/new": NewRun,
+  "/runs/:runId": RunConsole,
 };
 
 /** A route the role may not open stays on its URL and shows "No access" (App Flow 4.4). */

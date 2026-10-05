@@ -32,11 +32,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const headers: Record<string, string> = { Accept: "application/json" };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  const form = body instanceof FormData;
+  if (body !== undefined && !form) headers["Content-Type"] = "application/json";
   const res = await fetch(`${API_BASE}${path}`, {
     method,
     headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? undefined : form ? body : JSON.stringify(body),
   });
   if (!res.ok) {
     let problem: Problem = { status: res.status, title: res.statusText };
@@ -57,6 +58,9 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
 export const apiGet = <T>(path: string) => request<T>("GET", path);
 export const apiPost = <T>(path: string, body?: unknown) => request<T>("POST", path, body ?? {});
+export const apiPut = <T>(path: string, body: unknown) => request<T>("PUT", path, body);
+/** multipart/form-data upload (the browser sets the boundary). */
+export const apiUpload = <T>(path: string, form: FormData) => request<T>("POST", path, form);
 
 /** API-24 GET /health (subset used by the shell). */
 export interface Health {
@@ -69,8 +73,10 @@ export interface Health {
   egress_guard: { enabled: boolean; installed: boolean };
 }
 
-/** API-32 GET /system/airgap (built in Phase 5). */
+/** API-32 GET /system/airgap. */
 export interface AirGap {
+  mode?: string;
+  egress_guard?: { enabled: boolean; installed: boolean };
   blocked_egress_attempts: number;
 }
 

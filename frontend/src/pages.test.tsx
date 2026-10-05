@@ -24,12 +24,12 @@ function event(id: number, patch: Partial<AuditEvent> = {}): AuditEvent {
   };
 }
 
-describe("sidebar after Phase 3 (BUILT_PATHS: /, /login, /audit, /admin/users)", () => {
+describe("sidebar with Home, Data (S2-S4), Audit and Users built", () => {
   it.each([
-    ["ADMIN", ["Home", "Rules"], ["Audit", "Users"]],
+    ["ADMIN", ["Home", "Data", "Rules"], ["Audit", "Users"]],
     ["AUDITOR", ["Home", "Rules"], ["Audit"]],
-    ["MAKER", ["Home"], null],
-    ["CHECKER", ["Home"], null],
+    ["MAKER", ["Home", "Data"], null],
+    ["CHECKER", ["Home", "Data"], null],
   ] as const)("%s sees %j", async (role, items, ruleTabs) => {
     signIn(role, {
       handle: (u) => (u.includes("/audit") ? json({ items: [], next_cursor: null }) : undefined),
