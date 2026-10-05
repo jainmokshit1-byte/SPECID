@@ -30,6 +30,12 @@ class BatchQuality(Strict):
     category_share: dict[str, float]
     core_parse_rate: dict[str, float]
     uom_ambiguous: int = Field(ge=0)
+    # v2 (DEC-35): rows left out, UoM that is missing or unknown, and the health score
+    rejected_rows: int = Field(default=0, ge=0)
+    uom_unknown: int = Field(default=0, ge=0)
+    skipped_unchanged: int = Field(default=0, ge=0)
+    health_score: int | None = Field(default=None, ge=0, le=100)
+    health_components: dict[str, float] = Field(default_factory=dict)
 
 
 # ----- material_record -----

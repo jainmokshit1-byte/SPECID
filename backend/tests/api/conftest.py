@@ -16,6 +16,7 @@ from app.db.session import get_engine
 from app.main import app
 from app.security.auth import hash_password
 from app.security.ratelimit import login_limiter
+from app.settings import get_settings
 
 PASSWORD = "test-only-password-1"
 DEMO = {  # username -> (role, cpse code)
@@ -39,6 +40,8 @@ def reset_db(eng: Engine) -> dict[str, uuid.UUID]:
         c.exec_driver_sql("ALTER TABLE audit_event DISABLE TRIGGER USER")
         c.exec_driver_sql("TRUNCATE audit_event RESTART IDENTITY")
         c.exec_driver_sql("ALTER TABLE audit_event ENABLE TRIGGER USER")
+        c.exec_driver_sql("DELETE FROM run")  # cascades pairs, clusters
+        c.exec_driver_sql("DELETE FROM upload_batch")  # cascades records, specs, purchase lines
         c.exec_driver_sql("DELETE FROM app_user")
         c.exec_driver_sql("DELETE FROM cpse")
         cpse = {
@@ -61,6 +64,14 @@ def reset_db(eng: Engine) -> dict[str, uuid.UUID]:
             ).scalar_one()
             for name, (role, code) in DEMO.items()
         }
+
+
+@pytest.fixture(scope="session", autouse=True)
+def upload_dir(tmp_path_factory: pytest.TempPathFactory) -> str:
+    """Uploaded files go to a temp folder, never to the stack's data volume."""
+    path = str(tmp_path_factory.mktemp("uploads"))
+    get_settings().upload_dir = path
+    return path
 
 
 @pytest.fixture(scope="session")

@@ -13,8 +13,8 @@ import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import audit, auth, errors, health, users
-from app.core.templates import load_templates
+from app.api import audit, auth, batches, errors, health, users
+from app.core.templates import load_dictionary, load_templates
 from app.db.migrate import upgrade_head
 from app.settings import get_settings
 
@@ -49,6 +49,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     structlog.get_logger().info("migrations_applied")
     # TR-OPS-02, FR-401: an invalid template YAML aborts startup with file and line
     app.state.templates = load_templates(settings.template_dir)
+    app.state.dictionary = load_dictionary(settings.template_dir)
     structlog.get_logger().info(
         "templates_loaded", templates={t.id: t.version for t in app.state.templates.values()}
     )
@@ -95,3 +96,4 @@ app.include_router(health.router, prefix=API_PREFIX)
 app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(users.router, prefix=API_PREFIX)
 app.include_router(audit.router, prefix=API_PREFIX)
+app.include_router(batches.router, prefix=API_PREFIX)

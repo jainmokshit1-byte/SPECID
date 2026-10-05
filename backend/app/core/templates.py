@@ -165,6 +165,15 @@ def _spelling(doc: dict[str, Any], root: yaml.Node, source: str) -> tuple[frozen
     return vocab, protected
 
 
+def _header_synonyms(value: Any, source: str, line: int) -> Mapping[str, tuple[str, ...]]:
+    if not isinstance(value, dict) or not all(
+        isinstance(k, str) and isinstance(v, list) and all(isinstance(w, str) for w in v)
+        for k, v in value.items()
+    ):
+        raise TemplateError(source, line, "HEADER_SYNONYM must map a field to a list of headers")
+    return {k: tuple(v) for k, v in value.items()}
+
+
 def load_dictionary(directory: str | Path) -> Dictionary:
     """Expansions and spelling list (dictionary.yaml ABBREVIATION, SPELLING) and UoM aliases
     (uom.yaml), PRD 9.2 / TRD I / DEC-34."""
@@ -186,6 +195,9 @@ def load_dictionary(directory: str | Path) -> Dictionary:
     spelling, protected = _spelling(doc, droot, d_src)
     return Dictionary(
         version=version,
+        header_synonyms=_header_synonyms(
+            doc.get("HEADER_SYNONYM", {}), d_src, _key_line(droot, "HEADER_SYNONYM") or 1
+        ),
         spelling=spelling,
         spelling_protected=protected,
         abbreviations=_str_map(

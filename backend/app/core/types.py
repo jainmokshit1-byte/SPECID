@@ -66,3 +66,5 @@ class Dictionary:
     # must never be "repaired" into one of them (STUB is not STUD)
     spelling: frozenset[str] = frozenset()
     spelling_protected: frozenset[str] = frozenset()
+    # ingest column suggestions (TRD Appendix H): target field -> normalised header synonyms
+    header_synonyms: Mapping[str, tuple[str, ...]] = field(default_factory=dict)

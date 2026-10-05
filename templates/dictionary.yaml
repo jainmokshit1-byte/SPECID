@@ -27,18 +27,21 @@ SPELLING:
   protected: [STUB, CLASP, GLOVE, CHOCK, GRADER, WELDER, ROUND, SOUND, FOUND, PLATE, PLATES,
               GRATE, VALUE, BALE, BELL]
 
-# TRD v1.1 Appendix H.1: header synonyms (case-insensitive, punctuation ignored)
+# TRD v1.1 Appendix H.1 + H.2 (SAP preset, FR-1005): header synonyms, case-insensitive,
+# punctuation ignored. v2 adds the SAP table-field names and the quantity/stock columns (DEC-35).
 HEADER_SYNONYM:
-  legacy_code: [material code, material no, item code, mat code, code, matnr]
-  short_text: [short text, description, material description, item description, maktx]
+  legacy_code: [material code, material no, material number, item code, mat code, code, matnr, mara matnr]
+  short_text: [short text, description, material description, item description, maktx, makt maktx]
   long_text: [long text, long description, specification, purchase text]
-  uom: [uom, unit, base unit, meins]
-  mat_group: [material group, category, matkl]
-  manufacturer: [manufacturer, make, mfr, mfrnr]
-  mpn: [part number, mpn, mfr part no, mfrpn]
-  plant: [plant, werks, location]
+  uom: [uom, unit, base unit, meins, mara meins]
+  mat_group: [material group, category, matkl, mara matkl]
+  manufacturer: [manufacturer, make, mfr, mfrnr, mara mfrnr]
+  mpn: [part number, mpn, mfr part no, mfrpn, mara mfrpn]
+  plant: [plant, werks, location, marc werks]
   criticality: [criticality, critical, abc]
   annual_value: [annual value, consumption value, annual spend]
+  annual_qty: [annual qty, annual quantity, consumption qty, yearly qty]
+  stock_qty: [stock, stock qty, stock quantity, on hand, labst, unrestricted stock]
 
 # FR-405: filled only from the official UNSPSC browser, each code with a source note.
 # Empty until an entry has been verified; no code is written from memory.

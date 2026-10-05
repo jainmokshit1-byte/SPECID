@@ -1,6 +1,7 @@
 """TRD TR-SEC-03 / TR-TST-05: every endpoint declares its roles; one test per endpoint per role,
 generated from the permission matrix (app.security.permissions.PERMISSIONS)."""
 
+import re
 import uuid
 
 import pytest
@@ -27,6 +28,13 @@ ENDPOINTS: dict[tuple[str, str], Action | str] = {
     ("POST", "/api/v1/users/{user_id}/disable"): Action.MANAGE_USERS,
     ("GET", "/api/v1/audit"): Action.VIEW_AUDIT,
     ("GET", "/api/v1/audit/verify"): Action.VIEW_AUDIT,
+    ("POST", "/api/v1/batches"): Action.UPLOAD_BATCHES,
+    ("GET", "/api/v1/batches"): Action.VIEW_CLUSTERS,
+    ("GET", "/api/v1/batches/{batch_id}"): Action.VIEW_CLUSTERS,
+    ("GET", "/api/v1/batches/{batch_id}/quality"): Action.VIEW_CLUSTERS,
+    ("PUT", "/api/v1/batches/{batch_id}/mapping"): Action.UPLOAD_BATCHES,
+    ("POST", "/api/v1/batches/{batch_id}/ingest"): Action.UPLOAD_BATCHES,
+    ("POST", "/api/v1/batches/{batch_id}/procurement"): Action.UPLOAD_BATCHES,
 }
 ROLE_USER = {role: name for name, (role, _) in DEMO.items()}
 
@@ -82,7 +90,7 @@ def test_matrix_rows_from_prd_section_2() -> None:
 
 
 def _url(path: str) -> str:
-    return path.replace("{user_id}", str(uuid.uuid4()))
+    return re.sub(r"\{\w+\}", lambda _: str(uuid.uuid4()), path)
 
 
 CASES = [(method, path, role) for (method, path), action in ENDPOINTS.items() for role in ROLES]
