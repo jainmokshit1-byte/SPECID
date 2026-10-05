@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { NavItemId, VisibleItem } from "../../nav";
+import { Wordmark } from "../brand/Logo";
 import { DevTag } from "../ui/Tabs";
 
 const ICONS: Record<NavItemId, LucideIcon> = {
@@ -33,7 +34,9 @@ export function Sidebar({ items, activeId }: { items: VisibleItem[]; activeId: N
       aria-label="Main"
       className="z-sidebar flex w-sidebar shrink-0 flex-col border-r border-border bg-surface"
     >
-      <div className="flex h-topbar shrink-0 items-center px-4 text-h3 text-text">SpecID</div>
+      <div className="flex h-topbar shrink-0 items-center border-b border-border px-4">
+        <Wordmark />
+      </div>
       <ItemList items={top} activeId={activeId} />
       <div className="mt-auto pb-2">
         <ItemList items={bottom} activeId={activeId} />
@@ -45,7 +48,7 @@ export function Sidebar({ items, activeId }: { items: VisibleItem[]; activeId: N
 function ItemList({ items, activeId }: { items: VisibleItem[]; activeId: NavItemId | null }) {
   if (items.length === 0) return null;
   return (
-    <ul className="px-2">
+    <ul className="space-y-0.5 px-2 pt-2">
       {items.map((item) => {
         const Icon = ICONS[item.id];
         const active = item.id === activeId;
@@ -56,7 +59,9 @@ function ItemList({ items, activeId }: { items: VisibleItem[]; activeId: NavItem
               to={first.path}
               aria-current={active ? "page" : undefined}
               className={`flex items-center gap-2.5 rounded px-2 py-2 text-body ${
-                active ? "bg-surface-2 font-medium text-primary" : "text-text hover:bg-surface-2"
+                active
+                  ? "bg-auto-bg font-medium text-primary shadow-[inset_3px_0_0_var(--primary)]"
+                  : "text-text hover:bg-surface-2"
               }`}
             >
               <Icon size={18} strokeWidth={1.75} aria-hidden="true" />
