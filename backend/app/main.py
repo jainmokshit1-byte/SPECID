@@ -13,10 +13,12 @@ import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import audit, auth, batches, errors, health, system, users
+from app.api import audit, auth, batches, errors, health, runs, system, users
 from app.core.templates import load_dictionary, load_templates
 from app.db.migrate import upgrade_head
+from app.db.session import get_session_factory
 from app.security import egress
+from app.services import jobs
 from app.settings import get_settings
 
 API_PREFIX = "/api/v1"
@@ -50,6 +52,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
     upgrade_head(settings.database_url)  # TR-DAT-01: migrations before templates load
     structlog.get_logger().info("migrations_applied")
+    with get_session_factory()() as session:  # no job survives a restart
+        interrupted = jobs.recover_interrupted(session)
+        session.commit()
+    if interrupted:
+        structlog.get_logger().warning("runs_interrupted_by_restart", count=interrupted)
     # TR-OPS-02, FR-401: an invalid template YAML aborts startup with file and line
     app.state.templates = load_templates(settings.template_dir)
     app.state.dictionary = load_dictionary(settings.template_dir)
@@ -57,6 +64,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         "templates_loaded", templates={t.id: t.version for t in app.state.templates.values()}
     )
     yield
+    jobs.shutdown()
     guard = egress.current_guard()
     if guard is not None:
         guard.uninstall()
@@ -103,4 +111,5 @@ app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(users.router, prefix=API_PREFIX)
 app.include_router(audit.router, prefix=API_PREFIX)
 app.include_router(batches.router, prefix=API_PREFIX)
+app.include_router(runs.router, prefix=API_PREFIX)
 app.include_router(system.router, prefix=API_PREFIX)

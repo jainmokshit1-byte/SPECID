@@ -62,6 +62,7 @@ class Dictionary:
     abbreviations: Mapping[str, str] = field(default_factory=dict)  # PRD 9.2 rule 9
     uom_aliases: Mapping[str, str] = field(default_factory=dict)  # TRD Appendix I
     uom_ambiguous: frozenset[str] = frozenset()
+    uom_version: int = 1  # version of uom.yaml (stored in the run configuration)
     # spelling repair before the rules (DEC-34 DEV-6): engineering words, and real words that
     # must never be "repaired" into one of them (STUB is not STUD)
     spelling: frozenset[str] = frozenset()

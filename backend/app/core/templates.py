@@ -207,4 +207,5 @@ def load_dictionary(directory: str | Path) -> Dictionary:
             uom.get("aliases"), u_src, _key_line(uroot, "aliases") or 1, "aliases"
         ),
         uom_ambiguous=frozenset(ambiguous),
+        uom_version=uom.get("version") if isinstance(uom.get("version"), int) else 1,
     )
