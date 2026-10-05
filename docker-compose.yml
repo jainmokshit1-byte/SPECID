@@ -5,7 +5,7 @@ name: specid
 
 services:
   db:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16   # PostgreSQL 16 + pgvector (DEC-31)
     environment:
       POSTGRES_USER: specid
       POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}

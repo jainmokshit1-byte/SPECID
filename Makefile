@@ -85,7 +85,7 @@ doctor:
 	@if [ -f models/manifest.json ]; then echo "models:       manifest.json present"; \
 	  else echo "models:       none yet (make models, Phase 5)"; fi
 	@echo "templates:    $$(ls templates/*.yaml 2>/dev/null | wc -l | tr -d ' ') YAML file(s)"
-	@echo "backend lock: $$(grep -c '==' backend/requirements.lock) core pins, $$(grep -c '==' backend/requirements-ml.lock) ML pins"
+	@echo "backend lock: $$(grep -c "==" backend/requirements.lock) pins (no torch; AI runs in Ollama, DEC-31)"
 
 ## ruff, black --check, mypy core, eslint (+ prettier)
 lint:

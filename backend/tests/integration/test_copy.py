@@ -43,6 +43,9 @@ def test_copy_10001_records_in_three_batches(conn: Connection) -> None:
     assert tuple(last) == (f"L{n - 1:06d}", f"SYNTHETIC ITEM {n - 1}")
 
 
+VEC = [0.25, -0.5] * 384  # 768 dimensions (pgvector, DEC-31)
+
+
 def test_copy_adapts_jsonb_and_arrays(conn: Connection) -> None:
     cpse, batch = _cpse_and_batch(conn)
     rec = uuid.uuid4()
@@ -57,17 +60,17 @@ def test_copy_adapts_jsonb_and_arrays(conn: Connection) -> None:
         ["record_id", "norm_text", "attrs", "attr_meta", "residual", "class_path", "embedding"],
         [(rec, "GATE VALVE 4 IN", {"size_dn": 100, "trim": None},
           {"size_dn": {"tier": "RULE", "confidence": 1.0, "note": "4 IN = DN100"}},
-          ["XYZ"], ["PIPING", "VALVE", "GATE"], [0.25, -0.5])],
+          ["XYZ"], ["PIPING", "VALVE", "GATE"], VEC)],
     )  # fmt: skip
     row = conn.execute(
         text(
             "SELECT attrs->'size_dn', attrs ? 'trim', attr_meta->'size_dn'->>'note', residual,"
-            " class_path, embedding FROM spec_record WHERE record_id = :r"
+            " class_path, embedding::real[] FROM spec_record WHERE record_id = :r"
         ),
         {"r": rec},
     ).one()
     assert tuple(row) == (100, True, "4 IN = DN100", ["XYZ"], ["PIPING", "VALVE", "GATE"],
-                          [0.25, -0.5])  # fmt: skip
+                          VEC)  # fmt: skip
 
 
 def test_copy_rejects_unknown_column(conn: Connection) -> None:

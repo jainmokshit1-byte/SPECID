@@ -14,10 +14,10 @@ backend() {
   docker network inspect "$NET" >/dev/null 2>&1 || docker network create "$NET" >/dev/null
   docker rm -f "$DB" >/dev/null 2>&1 || true
   docker run -d --name "$DB" --network "$NET" \
-    -e POSTGRES_USER=specid -e POSTGRES_PASSWORD=specid -e POSTGRES_DB=specid postgres:16-alpine >/dev/null
+    -e POSTGRES_USER=specid -e POSTGRES_PASSWORD=specid -e POSTGRES_DB=specid pgvector/pgvector:pg16 >/dev/null
   trap 'docker rm -f "$DB" >/dev/null 2>&1 || true' EXIT
   until docker exec "$DB" pg_isready -U specid -d specid >/dev/null 2>&1; do sleep 1; done
-  echo "== backend job (python:3.11-slim, postgres:16-alpine) =="
+  echo "== backend job (python:3.11-slim, pgvector/pgvector:pg16) =="
   docker run --rm --network "$NET" -v "$ROOT/backend":/w -w /w \
     -v "$ROOT/impdocs":/impdocs:ro -v "$ROOT/templates":/templates:ro -v "$ROOT/docs":/docs:ro \
     -v specid_pip_cache:/root/.cache/pip \

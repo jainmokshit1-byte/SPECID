@@ -1,4 +1,5 @@
-"""SQLAlchemy 2.0 models for the 26 tables of Backend Schema Appendix A (schema v0.6).
+"""SQLAlchemy 2.0 models for the 26 tables of Backend Schema Appendix A (schema v0.6),
+plus the v2 columns of migration 0002 (DEC-31: stock, HSN, pgvector embeddings).
 
 The DDL (CHECK constraints, partial indexes, triggers) lives only in the Alembic migrations;
 these classes mirror columns, keys and foreign keys for queries and are checked against the
@@ -10,8 +11,8 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
-    REAL,
     BigInteger,
     Boolean,
     Date,
@@ -27,6 +28,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 NOW = text("now()")
+EMBEDDING_DIM = 768  # nomic-embed-text (DEC-31)
 
 
 class Base(DeclarativeBase):
@@ -123,6 +125,7 @@ class MaterialRecord(Base):
     criticality: Mapped[str | None]
     annual_value: Mapped[Decimal | None]
     annual_qty: Mapped[Decimal | None]
+    stock_qty: Mapped[Decimal | None]
     content_hash: Mapped[str]
     raw: Mapped[dict[str, Any] | None]
     created_at: Mapped[datetime] = _created_at()
@@ -185,7 +188,7 @@ class SpecRecord(Base):
     attr_meta: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'"))
     residual: Mapped[list[str]] = mapped_column(ARRAY(Text), server_default=text("'{}'"))
     spec_completeness: Mapped[Decimal | None]
-    embedding: Mapped[list[float] | None] = mapped_column(ARRAY(REAL))
+    embedding: Mapped[Any | None] = mapped_column(Vector(EMBEDDING_DIM))
     dictionary_version: Mapped[int | None]
     created_at: Mapped[datetime] = _created_at()
     updated_at: Mapped[datetime] = _created_at()
@@ -345,6 +348,7 @@ class Cnmc(Base):
     category: Mapped[str]
     class_path: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
     unspsc: Mapped[str | None]
+    hsn: Mapped[str | None]
     canonical_spec: Mapped[dict[str, Any]]
     spec_completeness: Mapped[Decimal | None]
     variants: Mapped[list[Any]] = mapped_column(server_default=text("'[]'"))
@@ -357,6 +361,7 @@ class Cnmc(Base):
     version: Mapped[int] = mapped_column(server_default=text("1"))
     issued_by: Mapped[uuid.UUID | None] = _fk("app_user.id")
     issued_at: Mapped[datetime] = _created_at()
+    embedding: Mapped[Any | None] = mapped_column(Vector(EMBEDDING_DIM))
 
 
 class Crosswalk(Base):

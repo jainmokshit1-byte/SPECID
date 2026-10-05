@@ -1,4 +1,5 @@
-"""TR-DAT-01: 0001_initial is Backend Schema Appendix A (schema v0.6) verbatim."""
+"""TR-DAT-01: 0001_initial is Backend Schema Appendix A (schema v0.6) verbatim; 0002_v2 adds
+stock, HSN and pgvector embeddings (DEC-31)."""
 
 import re
 from pathlib import Path
@@ -39,8 +40,56 @@ def test_all_26_tables_created(conn: Connection) -> None:
     assert len(TABLES) == 26
 
 
-def test_head_is_0001(conn: Connection) -> None:
-    assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0001_initial"
+def test_head_is_0002(conn: Connection) -> None:
+    assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0002_v2"
+
+
+def test_0002_columns_and_vector_indexes(conn: Connection) -> None:
+    def col_type(table: str, col: str) -> str | None:
+        return conn.execute(
+            text(
+                "SELECT format_type(atttypid, atttypmod) FROM pg_attribute"
+                " WHERE attrelid = CAST(:t AS regclass) AND attname = :c AND NOT attisdropped"
+            ),
+            {"t": table, "c": col},
+        ).scalar()
+
+    assert conn.execute(text("SELECT extname FROM pg_extension WHERE extname = 'vector'")).scalar()
+    assert col_type("material_record", "stock_qty") == "numeric"
+    assert col_type("cnmc", "hsn") == "text"
+    assert col_type("cnmc", "embedding") == "vector(768)"
+    assert col_type("spec_record", "embedding") == "vector(768)"
+    indexes = set(
+        conn.execute(
+            text("SELECT indexname FROM pg_indexes WHERE indexname LIKE '%_hnsw'")
+        ).scalars()
+    )
+    assert indexes == {"spec_record_embedding_hnsw", "cnmc_embedding_hnsw"}
+
+
+@pytest.mark.parametrize(
+    "hsn,ok",
+    [
+        ("8481", True),
+        ("848180", True),
+        ("84818030", True),
+        ("848", False),
+        ("84818", False),
+        ("8481A0", False),
+    ],
+)
+def test_0002_hsn_format(conn: Connection, hsn: str, ok: bool) -> None:
+    stmt = text(
+        "INSERT INTO cnmc (cnmc, category, canonical_spec, status, hsn)"
+        " VALUES ('NMC-00000000018', 'VALVE', '{}', 'ACTIVE', :h)"
+    )
+    sp = conn.begin_nested()
+    if ok:
+        conn.execute(stmt, {"h": hsn})
+    else:
+        with pytest.raises(Exception, match="check constraint"):
+            conn.execute(stmt, {"h": hsn})
+    sp.rollback()
 
 
 def test_audit_triggers_and_cnmc_sequence(conn: Connection) -> None:

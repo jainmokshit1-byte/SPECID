@@ -42,6 +42,8 @@ openpyxl==3.1.5
     # via -r requirements.in
 opentelemetry-api==1.45.0
     # via fastapi
+pgvector==0.5.0
+    # via -r requirements.in
 psycopg==3.3.6
     # via -r requirements.in
 psycopg-binary==3.3.6

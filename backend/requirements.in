@@ -1,4 +1,4 @@
-# Core runtime dependencies (TRD v1.1 section 3). Compiled to requirements.lock with pip-compile.
+# Core runtime dependencies (TRD v1.1 section 3; pgvector added in v2, DEC-31). Compiled to requirements.lock with pip-compile.
 fastapi>=0.110
 uvicorn>=0.29
 python-multipart
@@ -18,3 +18,4 @@ PyYAML
 PyJWT>=2.8
 bcrypt>=4.1
 structlog
+pgvector
