@@ -74,11 +74,29 @@ class UnspscMapContent(RootModel[dict[str, UnspscEntry]]):
     """UNSPSC_MAP: `{class_path: {code, source_note}}`."""
 
 
+class SpellingContent(Strict):
+    """SPELLING (DEC-34): engineering words to repair towards, and real words never repaired."""
+
+    vocabulary: list[str] = Field(default_factory=list)
+    protected: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _upper_words_no_overlap(self) -> "SpellingContent":
+        for w in (*self.vocabulary, *self.protected):
+            if not (w.isalpha() and w.isupper()):
+                raise ValueError(f"spelling words are upper-case letters only: {w!r}")
+        both = set(self.vocabulary) & set(self.protected)
+        if both:
+            raise ValueError(f"words in both vocabulary and protected: {sorted(both)}")
+        return self
+
+
 DICTIONARY_CONTENT: dict[str, type[BaseModel]] = {
     "ABBREVIATION": AbbreviationContent,
     "UOM": UomContent,
     "HEADER_SYNONYM": HeaderSynonymContent,
     "UNSPSC_MAP": UnspscMapContent,
+    "SPELLING": SpellingContent,
 }
 
 

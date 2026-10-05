@@ -1,6 +1,6 @@
-# Dictionaries v1 (FR-203, FR-405, FR-1005). Seeded as one dictionary row per kind.
+# Dictionaries v2 (FR-203, FR-405, FR-1005; v2 = DEC-34). Seeded as one dictionary row per kind.
 # UoM aliases are in uom.yaml. Changes go through the admin dictionary workflow (new version).
-version: 1
+version: 2
 
 # PRD v0.5 9.2 rule 9: whole-word expansions (the v1 seed of the reference code, Appendix C)
 ABBREVIATION:
@@ -10,6 +10,22 @@ ABBREVIATION:
   GRAF: GRAPHITE
   HD: HEAD
   FLG: FLANGE
+  # v2 face phrases (DEC-34; Phase 4 finding b): the extractors read RF / FF / RTJ
+  RAISED FACE: RF
+  FLAT FACE: FF
+  RING TYPE JOINT: RTJ
+  RING JOINT: RTJ
+
+# v2 spelling repair before the rules (DEC-34 DEV-6). A misspelt word becomes the one
+# vocabulary word that is one edit away; protected words are real words and are never changed.
+SPELLING:
+  vocabulary: [VALVE, GATE, GLOBE, CHECK, BALL, BUTTERFLY, FLANGE, FLANGED, PIPE, SEAMLESS,
+               WELDED, MOTOR, INDUCTION, SQUIRREL, CAGE, GASKET, SPIRAL, WOUND, GRAPHITE, BOLT,
+               STUD, SCREW, BLIND, WELD, NECK, SLIP, SOCKET, THREADED, RAISED, FLAT, FACE, RING,
+               JOINT, TYPE, CLASS, SCHEDULE, GRADE, INCH, INCHES, ZINC, PLATED, POLE, POLES, TRIM,
+               HEAD, ASTM]
+  protected: [STUB, CLASP, GLOVE, CHOCK, GRADER, WELDER, ROUND, SOUND, FOUND, PLATE, PLATES,
+              GRATE, VALUE, BALE, BELL]
 
 # TRD v1.1 Appendix H.1: header synonyms (case-insensitive, punctuation ignored)
 HEADER_SYNONYM:

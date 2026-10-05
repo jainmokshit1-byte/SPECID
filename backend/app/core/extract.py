@@ -10,7 +10,7 @@ from dataclasses import replace
 from typing import Any, Final
 
 from app.core.classify import CategoryModel, classify
-from app.core.normalise import normalise
+from app.core.normalise import normalise, spelling_repairs
 from app.core.types import AttrMeta, Dictionary, Spec
 from app.core.units import hp_to_kw, nb_to_dn, nps_to_dn, pressure_class, schedule_for
 
@@ -19,6 +19,7 @@ Notes = dict[str, str]
 Extractor = Callable[[str], tuple[Attrs, Notes, str]]
 
 STOP: Final = frozenset({"ASTM", "TYPE", "FOR", "OF", "AND", "WITH", "TO", "THE", "A", "ON"})
+SIZE_DEPENDENT_SCHEDULES: Final = frozenset({"STD", "XS", "XXS"})
 _TOKEN = re.compile(r"[A-Z0-9][A-Z0-9.\-]*")
 _CATEGORY_WORD = r"\b(VALVE|GASKET|FLANGE|PIPE|MOTOR)\b"
 
@@ -128,7 +129,12 @@ def _pipe(t: str) -> tuple[Attrs, Notes, str]:
     else:
         m, t = _take(r"\b()(STD|XS|XXS)\b", t)  # bare STD / XS / XXS
         s = m.group(2) if m else None
-    if s is not None:
+    if s in SIZE_DEPENDENT_SCHEDULES and a["size_dn"] is None:
+        # STD / XS / XXS name a wall that depends on the size: without a size the schedule is
+        # unknown, never a conflict (PRD 9.5; DEC-34 DEV-7)
+        _note(n, "schedule", f"{s} without a size is not resolvable")
+        s = None
+    elif s is not None:
         s, note = schedule_for(s, a["size_dn"])  # SME to verify (PRD B.2)
         _note(n, "schedule", note)
     a["schedule"] = s
@@ -266,9 +272,10 @@ def extract(
 ) -> Spec:
     """Normalise -> classify -> category extractor -> residual tokens (minus stop words)."""
     t = normalise(text, dictionary)
+    repairs = spelling_repairs(text, dictionary)
     category, source, prob = classify(t, model, threshold)
     if category is None or category not in EXTRACTORS:
-        return Spec(None, {}, {}, tuple(_TOKEN.findall(t)), mpn, maker, "NONE", prob)
+        return Spec(None, {}, {}, tuple(_TOKEN.findall(t)), mpn, maker, "NONE", prob, repairs)
     if category != "FASTENER":
         _, t = _take(_CATEGORY_WORD, t)
     attrs, notes, t = EXTRACTORS[category](t)
@@ -278,7 +285,7 @@ def extract(
         if attrs[k] is not None or k in notes
     }
     residual = tuple(x for x in _TOKEN.findall(t) if x not in STOP)
-    return Spec(category, attrs, meta, residual, mpn, maker, source, prob)
+    return Spec(category, attrs, meta, residual, mpn, maker, source, prob, repairs)
 
 
 def supply_attribute(spec: Spec, attr: str, value: Any, source: str) -> Spec:

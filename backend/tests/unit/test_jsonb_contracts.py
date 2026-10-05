@@ -115,4 +115,10 @@ def test_every_section_6_column_has_a_contract() -> None:
         ("idempotency_key", "response"),
     }  # fmt: skip
     assert set(j.CONTRACTS) == section_6
-    assert set(j.DICTIONARY_CONTENT) == {"ABBREVIATION", "UOM", "HEADER_SYNONYM", "UNSPSC_MAP"}
+    assert set(j.DICTIONARY_CONTENT) == {
+        "ABBREVIATION",
+        "UOM",
+        "HEADER_SYNONYM",
+        "UNSPSC_MAP",
+        "SPELLING",  # SPELLING: DEC-34
+    }

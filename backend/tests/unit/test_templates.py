@@ -28,7 +28,7 @@ def test_loads_the_six_appendix_a_templates_by_category() -> None:
 
 def test_loads_the_versioned_dictionary() -> None:
     d = load_dictionary(TEMPLATE_DIR)
-    assert d.version == 1
+    assert d.version == 2  # v2: face phrases and SPELLING (DEC-34)
     assert dict(d.abbreviations) == {
         "SMLS": "SEAMLESS",
         "FLGD": "FLANGED",
@@ -36,7 +36,13 @@ def test_loads_the_versioned_dictionary() -> None:
         "GRAF": "GRAPHITE",
         "HD": "HEAD",
         "FLG": "FLANGE",
+        "RAISED FACE": "RF",
+        "FLAT FACE": "FF",
+        "RING TYPE JOINT": "RTJ",
+        "RING JOINT": "RTJ",
     }
+    assert {"FLANGE", "CLASS", "INDUCTION"} <= d.spelling
+    assert "STUB" in d.spelling_protected and not d.spelling & d.spelling_protected
     assert d.uom_aliases["PCS"] == "EA" and "MT" in d.uom_ambiguous
 
 
@@ -99,8 +105,14 @@ def test_empty_directory_is_an_error(tmp_path: Path) -> None:
 
 
 def test_dictionary_errors_name_the_file(copy_dir: Path) -> None:
-    _edit(copy_dir / "dictionary.yaml", "version: 1", "version: 0")
+    _edit(copy_dir / "dictionary.yaml", "version: 2", "version: 0")
     with pytest.raises(TemplateError, match=r"dictionary\.yaml:\d+: version"):
+        load_dictionary(copy_dir)
+
+
+def test_spelling_lists_are_validated(copy_dir: Path) -> None:
+    _edit(copy_dir / "dictionary.yaml", "protected: [STUB,", "protected: [FLANGE, STUB,")
+    with pytest.raises(TemplateError, match=r"dictionary\.yaml:\d+: SPELLING word\(s\) in both"):
         load_dictionary(copy_dir)
 
 

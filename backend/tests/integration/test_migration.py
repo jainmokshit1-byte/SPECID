@@ -40,8 +40,8 @@ def test_all_26_tables_created(conn: Connection) -> None:
     assert len(TABLES) == 26
 
 
-def test_head_is_0002(conn: Connection) -> None:
-    assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0002_v2"
+def test_head_is_0003(conn: Connection) -> None:
+    assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0003_spelling"
 
 
 def test_0002_columns_and_vector_indexes(conn: Connection) -> None:

@@ -28,6 +28,7 @@ class Spec:
     maker: str | None = None
     class_source: Literal["RULE", "ML", "NONE"] = "NONE"
     class_prob: float | None = None
+    repairs: tuple[str, ...] = ()  # spelling repairs applied, e.g. "LFANGE -> FLANGE" (DEC-34)
 
 
 @dataclass(frozen=True)
@@ -61,3 +62,7 @@ class Dictionary:
     abbreviations: Mapping[str, str] = field(default_factory=dict)  # PRD 9.2 rule 9
     uom_aliases: Mapping[str, str] = field(default_factory=dict)  # TRD Appendix I
     uom_ambiguous: frozenset[str] = frozenset()
+    # spelling repair before the rules (DEC-34 DEV-6): engineering words, and real words that
+    # must never be "repaired" into one of them (STUB is not STUD)
+    spelling: frozenset[str] = frozenset()
+    spelling_protected: frozenset[str] = frozenset()

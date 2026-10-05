@@ -33,7 +33,12 @@ def test_seed_creates_section_12_rows_once(conn: Connection) -> None:
     salts = dict(conn.execute(text("SELECT code, vendor_salt FROM cpse")).all())
     second = seed(conn, s)
 
-    assert (first.cpse, first.app_user, first.template, first.dictionary) == (3, 6, 6, 4)
+    assert (first.cpse, first.app_user, first.template, first.dictionary) == (
+        3,
+        6,
+        6,
+        5,
+    )  # + SPELLING (DEC-34)
     assert (second.cpse, second.app_user, second.template, second.dictionary) == (0, 0, 0, 0)
     # re-running never changes a salt (vendor hashes stay stable, TRD TR-MOD-21)
     assert dict(conn.execute(text("SELECT code, vendor_salt FROM cpse")).all()) == salts
@@ -100,7 +105,8 @@ def test_dictionaries_v1_active(conn: Connection) -> None:
         r.kind: r.content
         for r in conn.execute(text("SELECT kind, content FROM dictionary WHERE status = 'ACTIVE'"))
     }
-    assert set(rows) == {"ABBREVIATION", "UOM", "HEADER_SYNONYM", "UNSPSC_MAP"}
+    assert set(rows) == {"ABBREVIATION", "UOM", "HEADER_SYNONYM", "UNSPSC_MAP", "SPELLING"}
+    assert "FLANGE" in rows["SPELLING"]["vocabulary"] and "STUB" in rows["SPELLING"]["protected"]
     assert rows["ABBREVIATION"]["FLGD"] == "FLANGED"
     assert rows["UOM"]["aliases"]["NOS"] == "EA" and rows["UOM"]["aliases"]["NO"] == "EA"
     assert rows["UOM"]["ambiguous"] == ["MT"] and "MT" not in rows["UOM"]["aliases"]

@@ -1,6 +1,7 @@
 """core/ conforms to the verbatim PRD Appendix C reference, except allowlisted deviations.
 
-The allowlist is DEVIATIONS below; each entry names the DEC that documents it (DEC-21, 24, 26).
+The allowlist is DEVIATIONS below; each entry names the DEC that documents it (DEC-21, 24, 26,
+34).
 
 Compared on every corpus pair: extraction (category, stated attributes, notes, residual), the
 decision (verdict, route, reasons, every evidence row), the short text, text_sim, both
@@ -20,7 +21,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from tests.coreenv import EQV, NOT, D, E, N
+from tests.coreenv import EQV, NOT, D, E, N, dictionary
 from tests.golden.test_golden import CASES
 from tests.property.strategies import texts
 from tests.property.test_properties import CL, GR, SIZES, _render
@@ -36,7 +37,11 @@ DEVIATIONS = {
     "DEV-3": ("DEC-21", "normaliser applies NFKC and drops non-printing characters (TR-MOD-01)"),
     "DEV-4": ("DEC-24", "normaliser repeats the rules to a fixed point (FR-201 idempotence)"),
     "DEV-5": ("DEC-26", "IDENTICAL needs MPN and maker on both sides, equal without case"),
+    "DEV-6": ("DEC-34", "spelling repair and v2 face phrases before the rules (dictionary v2)"),
+    "DEV-7": ("DEC-34", "STD / XS / XXS without a size is an unknown schedule, not a value"),
 }
+REF_ABBREVIATIONS = frozenset({"SMLS", "FLGD", "WND", "GRAF", "HD", "FLG"})  # Appendix C rule 9
+SIZE_DEPENDENT = ("STD", "XS", "XXS")
 REF_MAX_PASSES = 8  # the same cap as core/ (DEC-24)
 
 
@@ -86,17 +91,59 @@ def _dev4(text: str) -> bool:
     return R.normalise(once) != once
 
 
+def _v2_rewrite(text: str) -> str:
+    """What core/ does with dictionary v2 that the reference cannot (DEV-6): repair misspelt
+    engineering words and replace the v2 phrases (RAISED FACE -> RF, ...) by their short form."""
+    from app.core.normalise import repair_spelling
+
+    t, _ = repair_spelling(text.upper(), dictionary())
+    for phrase, short in dictionary().abbreviations.items():
+        if phrase not in REF_ABBREVIATIONS:
+            t = re.sub(rf"\b{re.escape(phrase)}\b", short, t)
+    return t
+
+
+def _dev6(text: str) -> bool:
+    """DEV-6 applies only when the v2 rewrite changes the (upper-cased) text."""
+    return _v2_rewrite(text) != text.upper()
+
+
 def _ref_input(text: str) -> str:
-    """The text the reference is run on: `text`, or under DEV-4 the reference's own fixed point."""
-    if not _dev4(text):
+    """The text the reference is run on: `text`; under DEV-4 the reference's own fixed point;
+    under DEV-6 the fixed point of the reference rules applied after the v2 rewrite."""
+    six = _dev6(text)
+    if not _dev4(text) and not six:
         return text
-    t = R.normalise(text)
+    step = (lambda t: R.normalise(_v2_rewrite(t))) if six else R.normalise
+    t = step(text)
     for _ in range(REF_MAX_PASSES - 1):
-        nxt = R.normalise(t)
+        nxt = step(t)
         if nxt == t:
             return t
         t = nxt
     raise AssertionError(f"reference fixed point not reached in {REF_MAX_PASSES} passes")
+
+
+def _dev7(ref: dict[str, Any]) -> bool:
+    """DEV-7 applies only to a pipe with STD / XS / XXS and no size (reference keeps the word)."""
+    a = ref["attrs"]
+    return (
+        ref["category"] == "PIPE"
+        and a.get("size_dn") is None
+        and a.get("schedule") in (SIZE_DEPENDENT)
+    )
+
+
+def _ref_extract(text: str) -> dict[str, Any]:
+    """The reference extraction, with DEV-7 applied: the size-dependent schedule becomes unknown,
+    with the same note core/ writes."""
+    s = R.extract(text)
+    if not _dev7(s):
+        return s
+    attrs, notes = dict(s["attrs"]), dict(s["notes"])
+    notes["schedule"] = f"{attrs['schedule']} without a size is not resolvable"
+    attrs["schedule"] = None
+    return {**s, "attrs": attrs, "notes": notes}
 
 
 def _dev1(ref_full: Any) -> bool:
@@ -138,7 +185,7 @@ def _core_extraction(x: str) -> dict[str, Any]:
 
 
 def _ref_extraction(x: str) -> dict[str, Any]:
-    s = R.extract(x)
+    s = _ref_extract(x)
     return {
         "category": s["category"],
         "attrs": {k: v for k, v in s["attrs"].items() if v is not None},
@@ -161,7 +208,7 @@ def _rows_ref(r: dict[str, Any]) -> list[tuple[Any, ...]]:
 
 def _short_ref(x: str, limit: int = 40) -> Any:
     try:
-        return R.short_desc(R.extract(x), limit)
+        return R.short_desc(_ref_extract(x), limit)
     except Exception as exc:  # the reference raises on some missing values (DEV-1)
         return exc
 
@@ -178,7 +225,7 @@ def assert_conforms(x: str, y: str) -> None:
             if not _dev1(_short_ref(tr, limit=10**6)):
                 assert short_desc(E(t)) == _short_ref(tr), t
 
-    ra, rb = R.extract(xr), R.extract(yr)
+    ra, rb = _ref_extract(xr), _ref_extract(yr)
     ref, core = R.decide(ra, rb), D(E(x), E(y))
     assert (core.verdict, core.route) == (ref["verdict"], ref["route"]), (x, y)
     core_rows, ref_rows = _rows_core(core), _rows_ref(ref)
@@ -423,3 +470,41 @@ def test_core_conforms_on_seed_7_generator_output() -> None:
         a = text[f"{p['cpse_a']}:{p['legacy_code_a']}"]
         b = text[f"{p['cpse_b']}:{p['legacy_code_b']}"]
         assert_conforms(a, b)
+
+
+def test_dev6_applies_only_to_repaired_or_v2_phrase_text(monkeypatch: pytest.MonkeyPatch) -> None:
+    """DEV-6 excuses nothing on text without a misspelt word or a v2 phrase; where it applies,
+    core/ equals the reference run on the rewritten text."""
+    golden = [t for pair in GOLDEN_PAIRS for t in pair]
+    assert not any(_dev6(t) for t in golden)  # golden texts need no repair
+    assert _dev6("LFANGE SO 1/2IN CL150 RF A182 F316") and _dev6("WN FLANGE 4IN RAISED FACE")
+    assert not _dev6("STUB END 4IN SCH40")  # protected word
+    assert_conforms("LFANGE SO 1/2IN CL150 RF A182 F316", "FLANGE SO 1/2IN CL150 RF A182 F316")
+    assert_conforms("GATE VALVE, 4 INCH, CLSAS 150, WCB, RAISED FACE FLANGED", "GV 4IN 150# WCB RF")
+
+    real_e = E
+
+    def drifted(text: str, mpn: str | None = None, maker: str | None = None) -> Any:
+        s = real_e(text, mpn, maker)
+        return replace(s, residual=(*s.residual, "DRIFT"))
+
+    monkeypatch.setattr(sys.modules[__name__], "E", drifted)
+    with pytest.raises(AssertionError):  # a planted difference is not excused by DEV-6
+        assert_conforms("LFANGE SO 1/2IN CL150 RF A182 F316", "FLANGE SO 1/2IN CL150 RF A182 F316")
+
+
+def test_dev7_applies_only_to_a_pipe_without_size(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert _dev7(R.extract("PIPE SMLS STD A106 GR.B"))
+    assert not _dev7(R.extract("PIPE SMLS 4IN STD A106 GR.B"))  # size known: STD resolves
+    assert not _dev7(R.extract("PIPE SMLS SCH40 A106 GR.B"))  # numeric schedule: a value
+    assert_conforms("PIPE SMLS STD A106 GR.B", "PIPE SMLS 4IN SCH40 A106 GR.B")
+
+    real_e = E
+
+    def drop_schedule(text: str, mpn: str | None = None, maker: str | None = None) -> Any:
+        s = real_e(text, mpn, maker)
+        return replace(s, attrs={**s.attrs, "schedule": None})
+
+    monkeypatch.setattr(sys.modules[__name__], "E", drop_schedule)
+    with pytest.raises(AssertionError):  # dropping a schedule that HAS a size is not excused
+        assert_conforms("PIPE SMLS 4IN SCH40 A106 GR.B", "PIPE SMLS 4IN SCH40 A106 GR.B")

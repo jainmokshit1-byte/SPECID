@@ -140,8 +140,34 @@ def _str_map(value: Any, source: str, line: int, name: str) -> Mapping[str, str]
     return dict(value)
 
 
+def _words(value: Any, source: str, line: int, name: str) -> frozenset[str]:
+    if not isinstance(value, list) or not all(
+        isinstance(w, str) and w.isalpha() and w.isupper() for w in value
+    ):
+        raise TemplateError(source, line, f"{name} must be a list of upper-case words")
+    return frozenset(value)
+
+
+def _spelling(doc: dict[str, Any], root: yaml.Node, source: str) -> tuple[frozenset[str], ...]:
+    """SPELLING (DEC-34): optional; vocabulary and protected words must not overlap."""
+    spelling = doc.get("SPELLING")
+    line = _key_line(root, "SPELLING") or 1
+    if spelling is None:
+        return frozenset(), frozenset()
+    if not isinstance(spelling, dict) or set(spelling) - {"vocabulary", "protected"}:
+        raise TemplateError(source, line, "SPELLING has only vocabulary and protected")
+    vocab = _words(spelling.get("vocabulary", []), source, line, "SPELLING.vocabulary")
+    protected = _words(spelling.get("protected", []), source, line, "SPELLING.protected")
+    if vocab & protected:
+        raise TemplateError(
+            source, line, f"SPELLING word(s) in both lists: {sorted(vocab & protected)}"
+        )
+    return vocab, protected
+
+
 def load_dictionary(directory: str | Path) -> Dictionary:
-    """Expansions (dictionary.yaml ABBREVIATION) and UoM aliases (uom.yaml), PRD 9.2 / TRD I."""
+    """Expansions and spelling list (dictionary.yaml ABBREVIATION, SPELLING) and UoM aliases
+    (uom.yaml), PRD 9.2 / TRD I / DEC-34."""
     paths = {name: Path(directory) / name for name in ("dictionary.yaml", "uom.yaml")}
     docs: dict[str, tuple[Any, yaml.Node]] = {}
     for name, path in paths.items():
@@ -157,8 +183,11 @@ def load_dictionary(directory: str | Path) -> Dictionary:
     ambiguous = uom.get("ambiguous", [])
     if not isinstance(ambiguous, list) or not all(isinstance(a, str) for a in ambiguous):
         raise TemplateError(u_src, _key_line(uroot, "ambiguous") or 1, "ambiguous must be text")
+    spelling, protected = _spelling(doc, droot, d_src)
     return Dictionary(
         version=version,
+        spelling=spelling,
+        spelling_protected=protected,
         abbreviations=_str_map(
             doc.get("ABBREVIATION"), d_src, _key_line(droot, "ABBREVIATION") or 1, "ABBREVIATION"
         ),

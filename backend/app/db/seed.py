@@ -81,11 +81,11 @@ def load_templates(template_dir: Path) -> list[TemplateDefinition]:
 
 
 def load_dictionaries(template_dir: Path) -> list[tuple[str, int, Any]]:
-    """(kind, version, content) for ABBREVIATION, HEADER_SYNONYM, UNSPSC_MAP and UOM."""
+    """(kind, version, content) for ABBREVIATION, HEADER_SYNONYM, UNSPSC_MAP, SPELLING and UOM."""
     doc = yaml.safe_load((template_dir / "dictionary.yaml").read_text("utf-8"))
     uom = yaml.safe_load((template_dir / "uom.yaml").read_text("utf-8"))
     out: list[tuple[str, int, Any]] = []
-    for kind in ("ABBREVIATION", "HEADER_SYNONYM", "UNSPSC_MAP"):
+    for kind in ("ABBREVIATION", "HEADER_SYNONYM", "UNSPSC_MAP", "SPELLING"):
         content = DICTIONARY_CONTENT[kind].model_validate(doc[kind]).model_dump(mode="json")
         out.append((kind, int(doc["version"]), content))
     uom_content = UomContent.model_validate({k: v for k, v in uom.items() if k != "version"})
@@ -150,11 +150,24 @@ def seed(conn: Connection, settings: SeedSettings) -> SeedResult:
         ).rowcount
 
     for kind, version, content in dictionaries:
+        known = conn.execute(
+            text("SELECT 1 FROM dictionary WHERE kind = :k AND version = :v"),
+            {"k": kind, "v": version},
+        ).first()
+        if known:
+            continue
+        # a newer file version replaces the active one (one ACTIVE row per kind)
+        conn.execute(
+            text(
+                "UPDATE dictionary SET status = 'RETIRED'"
+                " WHERE kind = :k AND status = 'ACTIVE' AND version < :v"
+            ),
+            {"k": kind, "v": version},
+        )
         res.dictionary += conn.execute(
             text(
                 "INSERT INTO dictionary (kind, version, content, status)"
                 " VALUES (:k, :v, CAST(:c AS jsonb), 'ACTIVE')"
-                " ON CONFLICT (kind, version) DO NOTHING"
             ),
             {"k": kind, "v": version, "c": json.dumps(content, ensure_ascii=False)},
         ).rowcount
