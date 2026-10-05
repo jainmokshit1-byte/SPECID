@@ -39,6 +39,10 @@ class Action(StrEnum):
     SUPPLY_ATTRIBUTE = "supply a missing attribute"  # P1
     PREVIEW_RULEBOOK = "preview a rulebook change"  # P0 since DEC-06b
     UNMERGE = "unmerge a record from a CNMC"  # P1
+    # v2 (DEC-39): downloads that write migration actions, and the change-notice inbox
+    EXPORT_REGISTRY = "download crosswalk exports and migration packs"  # API-18, API-35
+    VIEW_NOTICES = "read change notices"  # API-38
+    ACK_NOTICES = "acknowledge change notices"  # API-38
 
 
 M, C, A, AU, INT = Role.MAKER, Role.CHECKER, Role.ADMIN, Role.AUDITOR, Role.INTEGRATOR
@@ -59,6 +63,9 @@ PERMISSIONS: dict[Action, frozenset[Role]] = {
     Action.SUPPLY_ATTRIBUTE: frozenset({M, C}),
     Action.PREVIEW_RULEBOOK: frozenset({A}),
     Action.UNMERGE: frozenset({C}),
+    Action.EXPORT_REGISTRY: frozenset({M, C, A, INT}),
+    Action.VIEW_NOTICES: frozenset({M, C, A, INT}),
+    Action.ACK_NOTICES: frozenset({M, C}),
 }
 
 

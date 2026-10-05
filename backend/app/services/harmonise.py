@@ -502,6 +502,8 @@ def _cluster(
         cluster_rows,
     )  # fmt: skip
     copy_rows(conn, "cluster_member", ["cluster_id", "record_id"], member_rows)
+    # one review task per cluster, OPEN for a maker (sequence 2.3a step 6)
+    copy_rows(conn, "review_task", ["cluster_id", "state"], [(r[0], "OPEN") for r in cluster_rows])
 
     blocked_rows = []
     for b in blocked:

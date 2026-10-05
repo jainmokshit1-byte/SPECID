@@ -40,7 +40,10 @@ def reset_db(eng: Engine) -> dict[str, uuid.UUID]:
         c.exec_driver_sql("ALTER TABLE audit_event DISABLE TRIGGER USER")
         c.exec_driver_sql("TRUNCATE audit_event RESTART IDENTITY")
         c.exec_driver_sql("ALTER TABLE audit_event ENABLE TRIGGER USER")
-        c.exec_driver_sql("DELETE FROM run")  # cascades pairs, clusters
+        c.exec_driver_sql("DELETE FROM change_notice")
+        c.exec_driver_sql("DELETE FROM crosswalk")
+        c.exec_driver_sql("DELETE FROM cnmc")
+        c.exec_driver_sql("DELETE FROM run")  # cascades pairs, clusters, review tasks
         c.exec_driver_sql("DELETE FROM upload_batch")  # cascades records, specs, purchase lines
         c.exec_driver_sql("DELETE FROM app_user")
         c.exec_driver_sql("DELETE FROM cpse")
