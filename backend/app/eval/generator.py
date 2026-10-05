@@ -1,13 +1,18 @@
-"""Seeded synthetic generator v0 (PRD 10.1, FR-1101; TRD TR-TST-07).
+"""Seeded synthetic generator v1 (PRD 10.1, FR-1101, FR-107; TRD TR-TST-07; DEC-33).
 
 SYNTHETIC DATA. Written by the team that wrote the extraction rules, so results on it are
 optimistic by construction (PRD 10 honesty rule). No real CPSE data, makers or part numbers.
 
 Same seed + config -> byte-identical files (`manifest.json` holds the SHA-256 of each file).
 Defaults follow PRD 10.1 except `n_entities = 1200` (about 3,000 records, DEC-09).
+
+v1 adds purchase history (`procurement_<cpse>.csv`), stock on hand and annual quantity per
+record. They come from a second random stream, so codes, texts and both truth files are
+byte-identical to v0 for the same seed (only the record files gain columns).
 """
 
 import csv
+import datetime as dt
 import hashlib
 import io
 import json
@@ -20,11 +25,12 @@ from typing import Any
 
 from app.core.units import DN_NPS, schedule_for
 
-GENERATOR_VERSION = "0.1.0"
+GENERATOR_VERSION = "0.2.0"
 RECORD_COLUMNS = (
     "legacy_code short_text long_text uom mat_group manufacturer mpn plant criticality "
-    "annual_value"
+    "annual_value annual_qty stock_qty"
 ).split()
+PROCUREMENT_COLUMNS = "legacy_code po_date qty uom unit_price currency vendor plant".split()
 HONESTY = (
     "Synthetic data written by the team that wrote the rules; optimistic by construction; "
     "not a measure of performance on real CPSE data."
@@ -51,6 +57,13 @@ class GeneratorConfig:
     typo_rate: float = 0.02
     make_rate: float = 0.40
     splits: tuple[tuple[str, float], ...] = (("train", 0.6), ("validation", 0.2), ("test", 0.2))
+    # v1: purchase history and stock (second random stream, DEC-33)
+    as_of: str = "2026-09-30"  # history ends here; fixed so files stay reproducible
+    history_months: int = 24
+    dormant_rate: float = 0.15  # no purchase in the last 12 months
+    stock_rate: float = 0.45  # active records holding some stock
+    idle_stock_rate: float = 0.60  # dormant records still holding stock
+    cpse_price_bias: tuple[tuple[str, float], ...] = (("A", 0.94), ("B", 1.12), ("C", 1.03))
 
 
 # ---- value domains (PRD 10.1; SME review required) ----
@@ -395,6 +408,106 @@ def _render(
     return " ".join(w for w in words if w), sorted(set(dropped))
 
 
+# ---- purchase history and stock (v1) ----
+_VALVE_BASE = {"GATE": 1.0, "GLOBE": 1.25, "CHECK": 0.85, "BALL": 1.1}
+_MATERIAL_FACTOR = {
+    "A216-WCB": 1.0,
+    "A351-CF8M": 2.6,
+    "A105": 1.0,
+    "A182-F316": 2.4,
+    "A106-B": 1.15,
+    "A53-B": 1.0,
+}
+_YEARLY_QTY = {  # lognormal (mu, sigma) of the yearly quantity per record
+    "VALVE": (2.0, 0.9),
+    "PIPE": (5.5, 1.0),
+    "FLANGE": (2.8, 0.9),
+    "FASTENER": (5.0, 1.0),
+    "MOTOR": (0.6, 0.6),
+}
+
+
+def unit_price(cat: str, a: dict[str, Any]) -> float:
+    """Synthetic list price in INR (per metre for pipe, per piece otherwise). Plausible
+    orders of magnitude only; not market data."""
+    if cat == "VALVE":
+        size = (a["size_dn"] / 100) ** 1.4 * (a["pressure_class"] / 150) ** 0.6
+        end = 1.08 if a["end_connection"] != "BW" else 1.0
+        return (
+            9_000 * _VALVE_BASE[a["valve_type"]] * size * _MATERIAL_FACTOR[a["body_material"]] * end
+        )
+    if cat == "PIPE":
+        wall = {"40": 1.0, "80": 1.35}.get(a["schedule"], 1.15)
+        return 900 * (a["size_dn"] / 100) ** 1.25 * wall * _MATERIAL_FACTOR[a["material"]]
+    if cat == "FLANGE":
+        typ = {"WN": 1.2, "SO": 1.0, "BLIND": 0.9}[a["flange_type"]]
+        size = (a["size_dn"] / 100) ** 1.3 * (a["pressure_class"] / 150) ** 0.7
+        return 2_400 * typ * size * _MATERIAL_FACTOR[a["material"]]
+    if cat == "FASTENER":
+        d = int(a["thread"][1:])
+        length = a["length_mm"] or d
+        grade = {"8.8": 1.0, "10.9": 1.3, "B7": 1.5, "2H": 1.2}[a["strength"]]
+        return 0.004 * d**2 * (length + 2 * d) * grade + 4
+    return 6_500 * a["power_kw"] ** 0.85 * (1 + 0.04 * (a["poles"] - 4))
+
+
+def _procurement(
+    meta: list[tuple[str, dict[str, Any], dict[str, Any]]], cfg: GeneratorConfig
+) -> dict[str, list[dict[str, Any]]]:
+    """Purchase lines per CPSE; fills annual_value, annual_qty and stock_qty on each record.
+
+    `meta` holds (cpse, entity, record row) in record order. Each (entity, CPSE) pair keeps one
+    price level (CPSE bias x a fixed per-pair factor), so the same item costs differently in
+    different CPSEs, as in real fragmented buying."""
+    prng = random.Random(f"procurement-v1-{cfg.seed}")
+    as_of = dt.date.fromisoformat(cfg.as_of)
+    window = cfg.history_months * 30
+    bias = dict(cfg.cpse_price_bias)
+    vendors = {c: [f"SYNTH-VENDOR-{c}{i:02d}" for i in range(1, 9)] for c in cfg.cpses}
+    level: dict[tuple[str, str], float] = {}
+    out: dict[str, list[dict[str, Any]]] = {c: [] for c in cfg.cpses}
+    for cpse, e, row in meta:
+        cat, piece = e["category"], e["category"] != "PIPE"
+        key = (e["id"], cpse)
+        if key not in level:
+            level[key] = unit_price(cat, e["attrs"]) * bias[cpse] * prng.lognormvariate(0, 0.08)
+        mu, sigma = _YEARLY_QTY[cat]
+        yearly = max(1.0, prng.lognormvariate(mu, sigma))
+        dormant = prng.random() < cfg.dormant_rate
+        n_po = max(1, min(8, round(prng.lognormvariate(0.9, 0.6))))
+        lines = []
+        for _ in range(n_po):
+            # dormant records bought only in the older part of the window
+            days = prng.randrange(366, window) if dormant else prng.randrange(0, window)
+            qty = max(1.0, yearly * cfg.history_months / 12 / n_po * prng.uniform(0.5, 1.5))
+            qty = float(round(qty)) if piece else round(qty, 1)
+            price = level[key] * (1 - 0.05 * days / 365) * prng.uniform(0.97, 1.03)
+            lines.append(
+                {
+                    "legacy_code": row["legacy_code"],
+                    "po_date": (as_of - dt.timedelta(days=days)).isoformat(),
+                    "qty": qty,
+                    "uom": row["uom"],
+                    "unit_price": round(price, 2),
+                    "currency": "INR",
+                    "vendor": prng.choice(vendors[cpse]),
+                    "plant": row["plant"],
+                }
+            )
+        lines.sort(key=lambda r: (r["po_date"], r["qty"]))
+        out[cpse].extend(lines)
+        recent = [x for x in lines if (as_of - dt.date.fromisoformat(x["po_date"])).days < 365]
+        row["annual_qty"] = round(sum(x["qty"] for x in recent), 1)
+        row["annual_value"] = round(sum(x["qty"] * x["unit_price"] for x in recent))
+        if dormant:
+            held = prng.random() < cfg.idle_stock_rate
+            stock = yearly * prng.uniform(0.5, 1.5) if held else 0.0
+        else:
+            stock = yearly * prng.uniform(0.05, 0.35) if prng.random() < cfg.stock_rate else 0.0
+        row["stock_qty"] = float(round(stock)) if piece else round(stock, 1)
+    return out
+
+
 # ---- generation ----
 @dataclass
 class Generated:
@@ -402,6 +515,7 @@ class Generated:
     records: dict[str, list[dict[str, Any]]] = field(default_factory=dict)  # cpse -> rows
     truth_entities: list[dict[str, Any]] = field(default_factory=list)
     truth_pairs: list[dict[str, Any]] = field(default_factory=list)
+    procurement: dict[str, list[dict[str, Any]]] = field(default_factory=dict)  # cpse -> lines
 
 
 _UOM = {  # canonical, then the alias each CPSE style writes (TRD Appendix I)
@@ -454,6 +568,7 @@ def generate(cfg: GeneratorConfig | None = None) -> Generated:
     out = Generated(config=cfg, records={c: [] for c in cfg.cpses})
     seq = {c: 0 for c in cfg.cpses}
     members: dict[str, list[str]] = {}  # entity id -> record keys
+    meta: list[tuple[str, dict[str, Any], dict[str, Any]]] = []  # for the v1 history pass
     for e in entities:
         k = rng.choices([1, 2, 3], cfg.presence)[0]
         where = sorted(rng.sample(list(cfg.cpses), k))
@@ -468,20 +583,25 @@ def generate(cfg: GeneratorConfig | None = None) -> Generated:
                 text, dropped = _render(e["category"], e["attrs"], cpse, cfg, rng)
                 short, long = (text, "") if len(text) <= 40 else (text[:40].rstrip(), text)
                 uom_key = "PIPE" if e["category"] == "PIPE" else "OTHER"
-                out.records[cpse].append(
-                    {
-                        "legacy_code": code,
-                        "short_text": short,
-                        "long_text": long,
-                        "uom": _UOM[uom_key][cpse],
-                        "mat_group": _MAT_GROUP[e["category"]],
-                        "manufacturer": maker if with_make else "",
-                        "mpn": mpn if with_make else "",
-                        "plant": f"P{rng.randrange(1, 4)}",
-                        "criticality": "",
-                        "annual_value": round(rng.lognormvariate(10, 1.2)),
-                    }
-                )
+                row: dict[str, Any] = {
+                    "legacy_code": code,
+                    "short_text": short,
+                    "long_text": long,
+                    "uom": _UOM[uom_key][cpse],
+                    "mat_group": _MAT_GROUP[e["category"]],
+                    "manufacturer": maker if with_make else "",
+                    "mpn": mpn if with_make else "",
+                    "plant": f"P{rng.randrange(1, 4)}",
+                    "criticality": "",
+                    "annual_value": 0,  # filled from the purchase history
+                    "annual_qty": 0,
+                    "stock_qty": 0,
+                }
+                rng.lognormvariate(
+                    10, 1.2
+                )  # v0 annual_value draw (after plant), keeps the v0 stream
+                out.records[cpse].append(row)
+                meta.append((cpse, e, row))
                 key = f"CPSE-{cpse}:{code}"
                 members.setdefault(e["id"], []).append(key)
                 out.truth_entities.append(
@@ -516,6 +636,7 @@ def generate(cfg: GeneratorConfig | None = None) -> Generated:
                 for y in members.get(e["id"], []):
                     out.truth_pairs.append(pair(x, y, "NOT_EQUIVALENT_HARD"))
     out.truth_pairs.sort(key=lambda p: tuple(p.values()))
+    out.procurement = _procurement(meta, cfg)
     return out
 
 
@@ -531,6 +652,8 @@ def _csv(rows: Sequence[dict[str, Any]], columns: Sequence[str]) -> bytes:
 def files(gen: Generated) -> dict[str, bytes]:
     """File name -> bytes, manifest last (its hashes cover every other file)."""
     out = {f"cpse_{c}.csv": _csv(rows, RECORD_COLUMNS) for c, rows in gen.records.items()}
+    for c, lines in gen.procurement.items():
+        out[f"procurement_{c}.csv"] = _csv(lines, PROCUREMENT_COLUMNS)
     out["truth_entities.csv"] = _csv(
         gen.truth_entities,
         "cpse legacy_code entity_id category attrs dropped_core neighbour_of split".split(),
@@ -551,6 +674,7 @@ def files(gen: Generated) -> dict[str, bytes]:
             "entities": len({t["entity_id"] for t in gen.truth_entities}),
             "pairs_equivalent": labels.count("EQUIVALENT"),
             "pairs_not_equivalent_hard": labels.count("NOT_EQUIVALENT_HARD"),
+            "procurement_lines": sum(len(v) for v in gen.procurement.values()),
         },
         "files": {
             name: {"sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)}

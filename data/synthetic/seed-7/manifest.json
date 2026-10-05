@@ -1,5 +1,6 @@
 {
   "config": {
+    "as_of": "2026-09-30",
     "category_mix": [
       [
         "VALVE",
@@ -22,14 +23,31 @@
         0.1
       ]
     ],
+    "cpse_price_bias": [
+      [
+        "A",
+        0.94
+      ],
+      [
+        "B",
+        1.12
+      ],
+      [
+        "C",
+        1.03
+      ]
+    ],
     "cpses": [
       "A",
       "B",
       "C"
     ],
+    "dormant_rate": 0.15,
     "drop_core_rate": 0.05,
     "drop_ext_rate": 0.3,
     "hard_negative_share": 0.3,
+    "history_months": 24,
+    "idle_stock_rate": 0.6,
     "make_rate": 0.4,
     "n_entities": 1200,
     "presence": [
@@ -52,6 +70,7 @@
         0.2
       ]
     ],
+    "stock_rate": 0.45,
     "typo_rate": 0.02,
     "within_dup_rate": 0.1
   },
@@ -59,6 +78,7 @@
     "entities": 1499,
     "pairs_equivalent": 2166,
     "pairs_not_equivalent_hard": 1217,
+    "procurement_lines": 8747,
     "records": 3023,
     "records_per_cpse": {
       "CPSE-A": 993,
@@ -68,16 +88,28 @@
   },
   "files": {
     "cpse_A.csv": {
-      "bytes": 70080,
-      "sha256": "3bd3ba50d740e0b17245a6cecdb0e34642a2989613a69c101c3b6c6c57bb8743"
+      "bytes": 77649,
+      "sha256": "1096dba4640453c8fdf1c283bb21b19d57748e63699b1193a401a00726fb7398"
     },
     "cpse_B.csv": {
-      "bytes": 130210,
-      "sha256": "796ece1417e6e8335ea22587115cbc46bee8c43835914f50005f7e7b1c0877fd"
+      "bytes": 137869,
+      "sha256": "19677bac732429fc7a89265d34f10e9813f517844581c3ed2257aa55b1cba2a9"
     },
     "cpse_C.csv": {
-      "bytes": 66784,
-      "sha256": "0ef024986e47715d5dc5f86d94ecb1970f45c9787f1fe8b7edfe5426dcf13a6b"
+      "bytes": 74465,
+      "sha256": "9c6940277d1cc79ec823b0d60d4795b1dc1ebc8301d8417baa1b4c338f9e570e"
+    },
+    "procurement_A.csv": {
+      "bytes": 170057,
+      "sha256": "27da81e2dcdc23ff4f05050c591fd88eb2b71d06c3adf87ce17ab383d3a24012"
+    },
+    "procurement_B.csv": {
+      "bytes": 178650,
+      "sha256": "bfe202ae7e5ee9696d40227eb893ed90df03dadb9bc36c1ac93c20169fb1dc65"
+    },
+    "procurement_C.csv": {
+      "bytes": 181191,
+      "sha256": "19da56d6be9215c7ec57b07f15ff491fa17c6839f340e6e9f3b15183ea553308"
     },
     "truth_entities.csv": {
       "bytes": 476597,
@@ -88,7 +120,7 @@
       "sha256": "69b7f86542072449eaa3a3a7c0f8d2e0e8a625e34528a9de39ba11ceb2a51d6e"
     }
   },
-  "generator_version": "0.1.0",
+  "generator_version": "0.2.0",
   "honesty": "Synthetic data written by the team that wrote the rules; optimistic by construction; not a measure of performance on real CPSE data.",
   "seed": 7,
   "synthetic": true

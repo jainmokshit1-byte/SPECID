@@ -84,6 +84,7 @@ def cmd_generate(args: argparse.Namespace) -> None:
         f"entities {c['entities']}; truth pairs: EQUIVALENT {c['pairs_equivalent']}, "
         f"NOT_EQUIVALENT_HARD {c['pairs_not_equivalent_hard']}"
     )
+    print(f"procurement lines {c['procurement_lines']} (prices INR, synthetic)")
     print(
         f"files {len(manifest['files']) + 1}, {size:,} bytes on disk; generated in {elapsed:.2f} s"
     )

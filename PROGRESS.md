@@ -13,7 +13,7 @@ v1 Phases 1–4 done (gate G1, tag `gate-1`): pure engine (`core/`), schema v0.6
 | Chunk | WP | What | Status |
 |---|---|---|---|
 | 1 | 1.0 | Working rules (CLAUDE.md, PROGRESS.md), DEC entries, pgvector + migration 0002, drop torch/FAISS | done |
-| 1 | 1.1 | Generator v1: procurement lines, stock on hand, price spread | |
+| 1 | 1.1 | Generator v1: procurement lines, stock on hand, price spread | done |
 | 1 | 1.2 | Typo-tolerant dictionary, face phrases, unresolvable values stay unknown | |
 | 2 | 1.3 | Ingest: upload, SAP preset, UoM, quality report, health score | |
 | 2 | 1.4 | Candidates: blocking, BM25, MPN; pair completeness | |
@@ -33,3 +33,4 @@ v1 Phases 1–4 done (gate G1, tag `gate-1`): pure engine (`core/`), schema v0.6
 | Date | WP | Result |
 |---|---|---|
 | 2026-10-05 | 1.0 | v2 docs + CLAUDE.md; pgvector image; migration 0002 (stock, HSN, vector(768) + HNSW); torch/FAISS removed (API image 683 MB); 519 backend tests pass (DEC-31, DEC-32) |
+| 2026-10-05 | 1.1 | Generator v1: 8,747 synthetic purchase lines, stock, annual qty/value; codes, texts and truth files identical to v0 (DEC-33) |

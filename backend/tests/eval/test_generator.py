@@ -152,3 +152,87 @@ def test_hard_negatives_with_clean_text_are_never_merged() -> None:
         checked += 1
         assert D(E(text[ka]), E(text[kb])).verdict not in ("EQUIVALENT", "IDENTICAL"), (ka, kb)
     assert checked > 500  # sanity: the check really ran on hundreds of pairs
+
+
+# ---- v1: purchase history and stock (DEC-33) ----
+V0_SHA256 = {  # data/synthetic/seed-7/manifest.json of generator v0.1.0
+    "truth_entities.csv": "73f63871253934724aaec56323a3c25d3bd890f57e8b0fa62d47a030c4e46b7e",
+    "truth_pairs.csv": "69b7f86542072449eaa3a3a7c0f8d2e0e8a625e34528a9de39ba11ceb2a51d6e",
+}
+
+
+def test_v1_keeps_v0_codes_texts_and_truth() -> None:
+    """The history pass uses its own random stream: truth files stay byte-identical to v0."""
+    _, data = seed7()
+    for name, sha in V0_SHA256.items():
+        assert hashlib.sha256(data[name]).hexdigest() == sha, name
+
+
+def test_procurement_files_match_records() -> None:
+    import datetime as dt
+
+    gen, data = seed7()
+    as_of = dt.date.fromisoformat(gen.config.as_of)
+    manifest = json.loads(data["manifest.json"])
+    total = 0
+    for c in "ABC":
+        records = {r["legacy_code"]: r for r in _rows(data[f"cpse_{c}.csv"])}
+        lines = _rows(data[f"procurement_{c}.csv"])
+        total += len(lines)
+        recent: dict[str, float] = {}
+        for ln in lines:
+            rec = records[ln["legacy_code"]]  # every line belongs to a record of that CPSE
+            age = (as_of - dt.date.fromisoformat(ln["po_date"])).days
+            assert 0 <= age < gen.config.history_months * 30
+            assert float(ln["qty"]) > 0 and float(ln["unit_price"]) > 0
+            assert ln["currency"] == "INR" and ln["uom"] == rec["uom"]
+            assert ln["vendor"].startswith(f"SYNTH-VENDOR-{c}")
+            if age < 365:
+                recent[ln["legacy_code"]] = recent.get(ln["legacy_code"], 0.0) + float(
+                    ln["qty"]
+                ) * float(ln["unit_price"])
+        assert {ln["legacy_code"] for ln in lines} == set(records)  # every record was bought
+        for code, rec in records.items():
+            assert abs(float(rec["annual_value"]) - round(recent.get(code, 0.0))) <= 1
+            assert float(rec["stock_qty"]) >= 0
+    assert manifest["counts"]["procurement_lines"] == total
+
+
+def test_same_item_costs_differently_across_cpses() -> None:
+    """Price spread exists for shared entities, and CPSE-B pays more than CPSE-A on average."""
+    gen, data = seed7()
+    truth = {
+        (t["cpse"], t["legacy_code"]): t["entity_id"] for t in _rows(data["truth_entities.csv"])
+    }
+    price: dict[tuple[str, str], list[float]] = {}
+    for c in "ABC":
+        for ln in _rows(data[f"procurement_{c}.csv"]):
+            ent = truth[(f"CPSE-{c}", ln["legacy_code"])]
+            price.setdefault((ent, c), []).append(float(ln["unit_price"]))
+    mean = {k: sum(v) / len(v) for k, v in price.items()}
+    shared = {e for e, c in mean if c == "A"} & {e for e, c in mean if c == "B"}
+    assert len(shared) > 100
+    ratios = sorted(mean[(e, "B")] / mean[(e, "A")] for e in shared)
+    assert ratios[len(ratios) // 2] > 1.05  # median: B pays more
+    assert max(ratios) / min(ratios) > 1.2  # and the spread varies per item
+
+
+def test_idle_stock_exists_for_transfer_suggestions() -> None:
+    """Some records hold stock without any purchase in the last 12 months (stock sharing)."""
+    import datetime as dt
+
+    gen, data = seed7()
+    as_of = dt.date.fromisoformat(gen.config.as_of)
+    idle = 0
+    for c in "ABC":
+        bought = {
+            ln["legacy_code"]
+            for ln in _rows(data[f"procurement_{c}.csv"])
+            if (as_of - dt.date.fromisoformat(ln["po_date"])).days < 365
+        }
+        idle += sum(
+            1
+            for r in _rows(data[f"cpse_{c}.csv"])
+            if float(r["stock_qty"]) > 0 and r["legacy_code"] not in bought
+        )
+    assert idle > 100
