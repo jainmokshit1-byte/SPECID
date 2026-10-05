@@ -2,7 +2,7 @@
 
 Plan: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) · Product: [docs/SOLUTION.md](docs/SOLUTION.md) · Decisions: [docs/DECISIONS.md](docs/DECISIONS.md) · v1 history (Phases 1–4): [docs/history/PROGRESS_v1.md](docs/history/PROGRESS_v1.md)
 
-**Branch:** `v2-go1` · **Now:** Go 1, chunk 1 · **Next WP:** see the first unchecked row below.
+**Branch:** `v2-go1` · **Now:** Go 1, chunk 2 (WP1.3 ingest next) · chunk 1 done 5 Oct · Known issue: motor type `AC` vs `AC-IND` still conflicts (DEC-34).
 
 ## Starting point (5 Oct 2026)
 
