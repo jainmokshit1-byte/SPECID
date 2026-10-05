@@ -2,7 +2,7 @@
 
 Plan: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) · Product: [docs/SOLUTION.md](docs/SOLUTION.md) · Decisions: [docs/DECISIONS.md](docs/DECISIONS.md) · v1 history (Phases 1–4): [docs/history/PROGRESS_v1.md](docs/history/PROGRESS_v1.md)
 
-**Branch:** `v2-go1` · **Now:** product complete (every App Flow screen built); free cloud deployment prepared (docs/DEPLOY.md), waiting for the user's accounts and Gemini key · Known issue: motor type `AC` vs `AC-IND` still conflicts (DEC-34).
+**Branch:** `v2-go1` · **Now:** product complete and **deployed**: https://specid-0.netlify.app (web, Netlify) → https://specid.onrender.com (API, Render free) → Neon Postgres. Next: Gemini key (`AI_PROVIDER=gemini` in Render) and a live AI test · Known issue: motor type `AC` vs `AC-IND` still conflicts (DEC-34).
 
 ## Starting point (5 Oct 2026)
 
@@ -28,7 +28,7 @@ v1 Phases 1–4 done (gate G1, tag `gate-1`): pure engine (`core/`), schema v0.6
 | 5 | 1.12 | Look-alike Guard, dashboard, savings & pooling | done |
 | 5 | 2.1–2.4 | AI: classifier (in app), verified Gemini reader, meaning search; placeholder key | done (Gemini untested until the key arrives) |
 | 5 | 2.8 | Evaluation with bounds and baselines (S11), honesty panel, About (S17), Rulebook (S10) | done |
-| 5 | deploy | Demo mode, Neon + Render + Netlify files, 512 MB rehearsal | done (not deployed: needs the user's accounts) |
+| 5 | deploy | Demo mode, Neon + Render + Netlify, 512 MB rehearsal | done: live at https://specid-0.netlify.app (6 Oct) |
 
 ## Log
 
@@ -47,3 +47,4 @@ v1 Phases 1–4 done (gate G1, tag `gate-1`): pure engine (`core/`), schema v0.6
 | 2026-10-05 | 1.11–1.12, 2.1–2.4 | Search-before-create, dashboard with price gaps and stock sharing, Look-alike Guard, classifier, verified reader, meaning search (DEC-41) |
 | 2026-10-05 | 2.8 | Seeded evaluation with Wilson bound and B1/B2 baselines; demo login + bootstrap (DEC-42) |
 | 2026-10-05 | final | All screens built (S0 dashboard, S9, S10a/b + `GET /templates`, S11a/b, S13, S14, S15, S17); demo sign-in buttons; cloud footer never says air-gapped; JOB_MODE=thread; Neon URL accepted as is; render.yaml, netlify.toml, deploy/render.Dockerfile, docs/DEPLOY.md; bootstrap ordering fix (DEC-43) |
+| 2026-10-06 | deploy | Live: Netlify site `specid-0` (manual zip deploy, proxy `/api/*` → `specid.onrender.com`), Render web service `specid` (Docker, free, DEMO_MODE, AI off), Neon Singapore. Checked from outside: demo login, dashboard (989 records, 215 groups), 3 codes issued, evaluation 0 wrong merges |

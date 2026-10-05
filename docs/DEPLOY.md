@@ -1,5 +1,13 @@
 # Deploy the SpecID cloud demo (free tier)
 
+> **Live now (6 Oct 2026):** web **https://specid-0.netlify.app** · API **https://specid.onrender.com**
+> (Render service `specid`, created as *Public Git Repository*, Docker, `deploy/render.Dockerfile`) ·
+> Neon project `specid` (Singapore). The Netlify site was created by **drag-and-drop** (no GitHub
+> link). To update the web app: rebuild (`frontend` → `vite build`), copy `dist` + `_redirects` +
+> `_headers` (see `netlify-upload/`), zip it, and drag the zip onto **the site's Deploys tab** (not
+> app.netlify.com/drop, which makes a new site and a new link). Visitor access must stay **public**.
+> To update the API: push to GitHub, then Render → Manual Deploy → Deploy latest commit.
+
 Three free services, about 30 minutes the first time. Nothing here costs money; no card is needed
 for Neon or Netlify. Render's free plan may ask for a card on some accounts. If it does, see
 "Alternatives" at the end.
