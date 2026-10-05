@@ -16,7 +16,7 @@ v1 Phases 1–4 done (gate G1, tag `gate-1`): pure engine (`core/`), schema v0.6
 | 1 | 1.1 | Generator v1: procurement lines, stock on hand, price spread | done |
 | 1 | 1.2 | Typo-tolerant dictionary, face phrases, unresolvable values stay unknown | done |
 | 2 | 1.3 | Ingest: upload, SAP preset, UoM, quality report, health score | done |
-| 2 | 1.4 | Candidates: blocking, BM25, MPN; pair completeness | |
+| 2 | 1.4 | Candidates: blocking, BM25, MPN; pair completeness | done |
 | 2 | 1.5 | Run engine: background job, progress, cancel, stats | |
 | 2 | 1.13 | Egress guard + `/system/airgap` | |
 | 3 | 1.6 | Frontend design system | |
@@ -36,3 +36,4 @@ v1 Phases 1–4 done (gate G1, tag `gate-1`): pure engine (`core/`), schema v0.6
 | 2026-10-05 | 1.1 | Generator v1: 8,747 synthetic purchase lines, stock, annual qty/value; codes, texts and truth files identical to v0 (DEC-33) |
 | 2026-10-05 | 1.2 | Dictionary v2: spelling repair (DEV-6), face phrases, STD/XS without size unknown (DEV-7), migration 0003; seed-7: true matches found 897 → 1,344, can't-tell 1,265 → 822, false vetoes 4 → 0, false merges 0; 564 backend tests (DEC-34) |
 | 2026-10-05 | 1.3 | Ingest: /batches upload, mapping suggestions (SAP preset), ingest with specs, quality report + health score, purchase history (DEC-35) |
+| 2026-10-05 | 1.4 | Candidates: blocking + BM25 + MPN (+dense hook); seed-7 reach 98.1% of categorised true pairs at k=200 (DEC-36) |
