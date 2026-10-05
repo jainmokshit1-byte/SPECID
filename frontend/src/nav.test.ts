@@ -1,3 +1,4 @@
+import { BUILT_PATHS } from "./routes";
 import { describe, expect, it } from "vitest";
 import { NAV_ITEMS, type NavItem, navLocation, routePatternOf, visibleNav } from "./nav";
 import { type Role, SHELL_ROUTES } from "./routes";
@@ -48,7 +49,7 @@ describe("nav model (App Flow 3.1)", () => {
       const owners = NAV_ITEMS.flatMap((i) => i.tabs).filter(
         (t) => t.path === r.path || t.also?.includes(r.path),
       );
-      expect(owners, r.path).toHaveLength(r.pri === "P0" ? 1 : 0);
+      expect(owners, r.path).toHaveLength(r.pri === "P0" || BUILT_PATHS.has(r.path) ? 1 : 0);
     }
   });
 });
@@ -97,7 +98,7 @@ const APP_FLOW_3_2: Record<Role, Record<string, string[]>> = {
     Home: ["Home"],
     Data: ["Upload", "Matching runs"],
     Review: ["To review", "Look-alikes"],
-    Registry: ["Codes", "Search", "Exports"],
+    Registry: ["Codes", "Search", "Exports", "Change notices"],
     Results: ["Evaluation"],
     Rules: ["Rulebook"],
     Help: ["About"],
@@ -106,7 +107,7 @@ const APP_FLOW_3_2: Record<Role, Record<string, string[]>> = {
     Home: ["Home"],
     Data: ["Upload", "Matching runs"],
     Review: ["To review", "Consents", "Look-alikes"],
-    Registry: ["Codes", "Search", "Exports"],
+    Registry: ["Codes", "Search", "Exports", "Change notices"],
     Results: ["Evaluation"],
     Rules: ["Rulebook"],
     Help: ["About"],
@@ -128,7 +129,7 @@ const APP_FLOW_3_2: Record<Role, Record<string, string[]>> = {
     Rules: ["Rulebook", "Audit"],
     Help: ["About"],
   },
-  INTEGRATOR: { Registry: ["Codes", "Search"], Help: ["About"] },
+  INTEGRATOR: { Registry: ["Codes", "Search", "Change notices"], Help: ["About"] },
 };
 
 describe("role filtering (App Flow 3.2)", () => {
@@ -144,9 +145,11 @@ describe("role filtering (App Flow 3.2)", () => {
     expect(got).toEqual(APP_FLOW_3_2[role]);
   });
 
-  it("an INTEGRATOR sees two items once built; nothing before Phase 7", () => {
+  it("an INTEGRATOR sees two items once built; today the registry codes and notices", () => {
     expect(visibleNav(false, "INTEGRATOR", NAV_ITEMS, everything)).toHaveLength(2);
-    expect(visibleNav(false, "INTEGRATOR")).toEqual([]);
+    expect(
+      visibleNav(false, "INTEGRATOR").map((i) => [i.label, i.tabs.map((t) => t.label)]),
+    ).toEqual([["Registry", ["Codes", "Change notices"]]]);
   });
 
   it("the developer switch never shows a tab the role may not see", () => {
@@ -157,7 +160,7 @@ describe("role filtering (App Flow 3.2)", () => {
   });
 
   // App Flow 2 vs 3.2 disagree on /registry for INTEGRATOR (PROGRESS.md Q-03, before Phase 6).
-  const KNOWN_CONFLICTS: Record<string, Role[]> = { "/registry": ["INTEGRATOR"] };
+  const KNOWN_CONFLICTS: Record<string, Role[]> = {}; // Q-03 resolved by DEC-19
 
   it("a tab never offers a route its role cannot open (except open question Q-03)", () => {
     for (const tab of NAV_ITEMS.flatMap((i) => i.tabs)) {

@@ -5,13 +5,21 @@ import { RequireAuth } from "./auth/RequireAuth";
 import { AppShell } from "./components/layout/AppShell";
 import { TooltipProvider } from "./components/ui/Tooltip";
 import { Audit } from "./pages/Audit";
+import { ClusterReview } from "./pages/ClusterReview";
+import { CnmcDetail } from "./pages/CnmcDetail";
+import { Consents } from "./pages/Consents";
+import { Exports } from "./pages/Exports";
 import { Home } from "./pages/Home";
 import { Login } from "./pages/Login";
 import { NewRun } from "./pages/NewRun";
 import { NoAccess } from "./pages/NoAccess";
+import { Notices } from "./pages/Notices";
+import { PairEvidence } from "./pages/PairEvidence";
 import { NotFound } from "./pages/NotFound";
 import { Placeholder } from "./pages/Placeholder";
 import { Quality } from "./pages/Quality";
+import { Registry } from "./pages/Registry";
+import { ReviewQueue } from "./pages/ReviewQueue";
 import { RunConsole } from "./pages/RunConsole";
 import { Runs } from "./pages/Runs";
 import { Upload } from "./pages/Upload";
@@ -28,6 +36,14 @@ const PAGES: Record<string, () => JSX.Element> = {
   "/runs": Runs,
   "/runs/new": NewRun,
   "/runs/:runId": RunConsole,
+  "/review": ReviewQueue,
+  "/clusters/:clusterId": ClusterReview,
+  "/pairs/:pairId": PairEvidence,
+  "/consents": Consents,
+  "/registry": Registry,
+  "/registry/:cnmc": CnmcDetail,
+  "/exports": Exports,
+  "/notices": Notices,
 };
 
 /** A route the role may not open stays on its URL and shows "No access" (App Flow 4.4). */

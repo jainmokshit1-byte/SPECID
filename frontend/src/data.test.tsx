@@ -301,8 +301,11 @@ describe("S4 runs", () => {
     expect(screen.getByText("689")).toBeInTheDocument();
     expect(await screen.findByText("GATE VALVE, 4 INCH, CLASS 150")).toBeInTheDocument();
     expect(screen.getByText("All key attributes match")).toBeInTheDocument();
-    // the review queue is not built yet: never a link to a placeholder
-    expect(screen.getByRole("button", { name: "Open review queue" })).toBeDisabled();
+    // the review queue is built: a real link to this run's groups
+    expect(screen.getByRole("link", { name: "Open review queue" })).toHaveAttribute(
+      "href",
+      "/review?run=a724f4d3-a236-4a75-85d0-4d07028031c3",
+    );
   });
 
   it("a failed run shows its error and Start again", async () => {

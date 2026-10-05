@@ -60,6 +60,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Codes", path: "/registry", also: ["/registry/:cnmc"], roles: ALL },
       { label: "Search", path: "/search", roles: ["MAKER", "CHECKER", "ADMIN", "INTEGRATOR"] },
       { label: "Exports", path: "/exports", roles: MCA },
+      { label: "Change notices", path: "/notices", roles: ["MAKER", "CHECKER", "INTEGRATOR"] },
     ],
   },
   {

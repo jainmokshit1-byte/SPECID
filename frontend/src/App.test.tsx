@@ -110,20 +110,20 @@ describe("app shell (v1.2)", () => {
 });
 
 describe("navigation hides unbuilt screens (default mode)", () => {
-  it("a MAKER sees only built items: Home and Data", async () => {
+  it("a MAKER sees only built items", async () => {
     signIn("MAKER");
     renderAt("/");
-    expect(await sidebarLabels()).toEqual(["Home", "Data"]);
+    expect(await sidebarLabels()).toEqual(["Home", "Data", "Review", "Registry"]);
     expect(screen.queryByText("dev")).not.toBeInTheDocument();
   });
 
   it("an unbuilt screen still renders by URL but is not in the menu", async () => {
     signIn("CHECKER");
-    renderAt("/consents");
+    renderAt("/evaluation");
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Consent queue" }),
+      await screen.findByRole("heading", { level: 1, name: "Evaluation" }),
     ).toBeInTheDocument();
-    expect(await sidebarLabels()).toEqual(["Home", "Data"]);
+    expect(await sidebarLabels()).toEqual(["Home", "Data", "Review", "Registry"]);
     expect(screen.queryByRole("navigation", { name: "Section" })).not.toBeInTheDocument();
   });
 });
@@ -136,14 +136,12 @@ describe("developer switch shows unbuilt screens, marked dev", () => {
     expect(await sidebarLabels()).toEqual([
       "Home",
       "Data",
-      ...SIDEBAR_LABELS.slice(2).map((l) => `${l}dev`),
+      "Review",
+      "Registry",
+      ...SIDEBAR_LABELS.slice(4).map((l) => `${l}dev`),
     ]);
     const tabs = within(screen.getByRole("navigation", { name: "Section" })).getAllByRole("link");
-    expect(tabs.map((t) => t.textContent)).toEqual([
-      "To reviewdev",
-      "Consentsdev",
-      "Look-alikesdev",
-    ]);
+    expect(tabs.map((t) => t.textContent)).toEqual(["To review", "Consents", "Look-alikesdev"]);
     expect(tabs[0]).toHaveAttribute("aria-current", "page");
   });
 
@@ -157,7 +155,7 @@ describe("developer switch shows unbuilt screens, marked dev", () => {
     expect(await sidebarLabels()).toHaveLength(7);
     document.body.innerHTML = "";
     renderAt("/?dev=0");
-    expect(await sidebarLabels()).toEqual(["Home", "Data"]);
+    expect(await sidebarLabels()).toEqual(["Home", "Data", "Review", "Registry"]);
   });
 
   it("VITE_SHOW_UNBUILT=true lists all seven items for a MAKER", async () => {
@@ -172,7 +170,7 @@ describe("developer switch shows unbuilt screens, marked dev", () => {
     vi.stubEnv("VITE_SHOW_UNBUILT", "true");
     signIn("MAKER");
     renderAt("/?dev=1");
-    expect(await sidebarLabels()).toEqual(["Home", "Data"]);
+    expect(await sidebarLabels()).toEqual(["Home", "Data", "Review", "Registry"]);
   });
 });
 

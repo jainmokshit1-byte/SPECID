@@ -24,12 +24,12 @@ function event(id: number, patch: Partial<AuditEvent> = {}): AuditEvent {
   };
 }
 
-describe("sidebar with Home, Data (S2-S4), Audit and Users built", () => {
+describe("sidebar with Home, Data, Review, Registry, Audit and Users built", () => {
   it.each([
-    ["ADMIN", ["Home", "Data", "Rules"], ["Audit", "Users"]],
-    ["AUDITOR", ["Home", "Rules"], ["Audit"]],
-    ["MAKER", ["Home", "Data"], null],
-    ["CHECKER", ["Home", "Data"], null],
+    ["ADMIN", ["Home", "Data", "Registry", "Rules"], ["Audit", "Users"]],
+    ["AUDITOR", ["Home", "Registry", "Rules"], ["Audit"]],
+    ["MAKER", ["Home", "Data", "Review", "Registry"], null],
+    ["CHECKER", ["Home", "Data", "Review", "Registry"], null],
   ] as const)("%s sees %j", async (role, items, ruleTabs) => {
     signIn(role, {
       handle: (u) => (u.includes("/audit") ? json({ items: [], next_cursor: null }) : undefined),

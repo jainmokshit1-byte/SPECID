@@ -125,7 +125,11 @@ def test_three_cpse_cluster_waits_for_consent_then_issues(
     assert listed["total"] == 1 and listed["items"][0]["cpses"] == ["CPSE-A", "CPSE-B", "CPSE-C"]
     got = client.get(f"{API}/cnmc/{code}", headers=login(client, "auditor")).json()
     assert len(got["crosswalk"]) == members and got["class_path"][1] == got["category"]
-    assert {h["action"] for h in got["history"]} >= {"CNMC_ISSUED", "REVIEW_PROPOSED"}
+    assert {h["action"] for h in got["history"]} >= {
+        "CNMC_ISSUED",
+        "REVIEW_PROPOSED",
+        "CONSENT_GIVEN",
+    }
     assert client.get(f"{API}/audit/verify", headers=login(client, "auditor")).json()["ok"]
 
 

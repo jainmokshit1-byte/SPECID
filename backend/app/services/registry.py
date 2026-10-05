@@ -297,7 +297,7 @@ def get_cnmc(session: Session, code: str) -> dict[str, Any]:
             SELECT e.ts, e.action, u.username, e.after FROM audit_event e
             LEFT JOIN app_user u ON u.id = e.actor_id
             WHERE (e.object_type = 'cnmc' AND e.object_id = :n)
-               OR (e.object_type = 'review_task' AND e.object_id IN (
+               OR (e.object_type IN ('review_task', 'review_consent') AND e.object_id IN (
                      SELECT t.id::text FROM review_task t WHERE t.cluster_id = :cl))
             ORDER BY e.id
             """),

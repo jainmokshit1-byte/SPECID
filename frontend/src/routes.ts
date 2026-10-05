@@ -128,7 +128,7 @@ export const SHELL_ROUTES: RouteDef[] = [
     screen: "S8a",
     title: "Registry",
     purpose: "CNMCs with search and filters",
-    roles: MCAA,
+    roles: ALL, // INTEGRATOR read-only (DEC-19)
     pri: "P0",
     prd: "FR-906",
     phase: 6,
@@ -136,10 +136,10 @@ export const SHELL_ROUTES: RouteDef[] = [
   {
     path: "/registry/:cnmc",
     screen: "S8b",
-    title: "CNMC detail",
+    title: "National code",
     purpose:
       "Canonical spec, class path, members, crosswalk, substitutes (P1), history, unmerge (P1)",
-    roles: MCAA,
+    roles: ALL, // INTEGRATOR read-only (DEC-19)
     pri: "P0",
     prd: "FR-901–907, FR-1481–1482",
     phase: 6,
@@ -301,6 +301,15 @@ export const BUILT_PATHS: ReadonlySet<string> = new Set([
   "/runs",
   "/runs/new",
   "/runs/:runId",
+  // Go 1 chunk 4 (WP1.8-1.10): review, consent, registry, exports, change notices
+  "/review",
+  "/clusters/:clusterId",
+  "/pairs/:pairId",
+  "/consents",
+  "/registry",
+  "/registry/:cnmc",
+  "/exports",
+  "/notices",
 ]);
 
 /** Pages that show the run selector in the top bar (App Flow 3.3). */

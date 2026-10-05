@@ -240,7 +240,7 @@ describe("No access (App Flow 4.4)", () => {
     renderAt("/");
     const panel = await screen.findByRole("alert");
     expect(within(panel).getByRole("link")).toHaveAttribute("href", "/search");
-    expect(await sidebarLabels()).toEqual([]); // DEC-16: nothing built for INTEGRATOR yet
+    expect(await sidebarLabels()).toEqual(["Registry"]); // codes (read-only) and notices
   });
 });
 
