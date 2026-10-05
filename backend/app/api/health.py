@@ -14,6 +14,7 @@ from sqlalchemy import Engine
 
 from app.db.session import get_engine, ping
 from app.security import egress
+from app.services import demo
 from app.settings import Settings, get_settings
 
 router = APIRouter(tags=["system"])
@@ -60,5 +61,12 @@ def health(
             "installed": egress.guard_installed(),
         },
         "consent_mode": settings.consent_mode,
+        "demo_mode": settings.demo_mode,
+        "demo_status": demo.STATUS.get("state") if settings.demo_mode else None,
+        "ai_provider": settings.ai_provider,
+        "ai_ready": settings.ai_provider != "off"
+        and bool(settings.gemini_api_key)
+        and not settings.gemini_api_key.startswith("PASTE"),
+        "classifier": settings.classifier_enabled,
         "embeddings_enabled": settings.embeddings_enabled,
     }

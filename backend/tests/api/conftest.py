@@ -40,6 +40,7 @@ def reset_db(eng: Engine) -> dict[str, uuid.UUID]:
         c.exec_driver_sql("ALTER TABLE audit_event DISABLE TRIGGER USER")
         c.exec_driver_sql("TRUNCATE audit_event RESTART IDENTITY")
         c.exec_driver_sql("ALTER TABLE audit_event ENABLE TRIGGER USER")
+        c.exec_driver_sql("DELETE FROM eval_run")
         c.exec_driver_sql("DELETE FROM change_notice")
         c.exec_driver_sql("DELETE FROM crosswalk")
         c.exec_driver_sql("DELETE FROM cnmc")

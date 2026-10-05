@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     ai_reader_max_records: int = 400  # per run, to stay inside the free tier
     # hosted demo (DEC-42): one-click role buttons, demo data loaded at start, cloud footer
     demo_mode: bool = False
+    demo_entities: int = 1200  # demo data size (lower it on a small free server)
     git_commit: str = "unknown"
 
 

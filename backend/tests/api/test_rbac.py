@@ -14,7 +14,11 @@ from app.security.permissions import PERMISSIONS, ROLES, Action
 from app.security.rbac import current_user
 from tests.api.conftest import DEMO, audit_actions, login
 
-PUBLIC = {("GET", "/api/v1/health"), ("POST", "/api/v1/auth/login")}
+PUBLIC = {
+    ("GET", "/api/v1/health"),
+    ("POST", "/api/v1/auth/login"),
+    ("POST", "/api/v1/auth/demo-login"),  # demo mode only (DEC-42); 404 otherwise
+}
 SIGNED_IN = "any signed-in user"
 
 # Which matrix row each endpoint implements. A new endpoint fails test_every_route_is_listed
@@ -54,6 +58,10 @@ ENDPOINTS: dict[tuple[str, str], Action | str] = {
     ("GET", "/api/v1/pooling"): Action.VIEW_CLUSTERS,
     ("GET", "/api/v1/radar/lookalikes"): Action.VIEW_GUARD,
     ("GET", "/api/v1/radar/hidden-twins"): Action.VIEW_GUARD,
+    ("POST", "/api/v1/eval/runs"): Action.START_RUNS,
+    ("GET", "/api/v1/eval/runs"): Action.VIEW_CLUSTERS,
+    ("GET", "/api/v1/eval/runs/{eval_id}"): Action.VIEW_CLUSTERS,
+    ("GET", "/api/v1/eval/runs/{eval_id}/report.md"): Action.VIEW_CLUSTERS,
     ("POST", "/api/v1/batches"): Action.UPLOAD_BATCHES,
     ("GET", "/api/v1/batches"): Action.VIEW_CLUSTERS,
     ("GET", "/api/v1/batches/{batch_id}"): Action.VIEW_CLUSTERS,

@@ -1,13 +1,15 @@
 """API-01 `POST /auth/login`, API-02 `GET /me`, `POST /me/password` (DEC-14)."""
 
 from fastapi import APIRouter, Depends, Response
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db.models import AppUser
 from app.db.session import get_session
 from app.schemas.auth import ChangePasswordRequest, LoginRequest, LoginResponse, Me
 from app.security.rbac import current_user
-from app.services import users
+from app.services import demo, users
+from app.services.errors import NotFound
 from app.settings import Settings, get_settings
 
 router = APIRouter(tags=["auth"])
@@ -40,6 +42,31 @@ def login(
         expires_at=result.expires_at,
         role=result.user.role,
         must_change_password=result.user.must_change_password,
+    )
+
+
+class DemoLogin(BaseModel):
+    username: str
+
+
+@router.post("/auth/demo-login", response_model=LoginResponse)
+def demo_login(
+    body: DemoLogin,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> LoginResponse:
+    """Hosted demo only (DEC-42): one click per demo role, no password. 404 otherwise."""
+    if not settings.demo_mode:
+        raise NotFound("Not available.")
+    result = demo.demo_login(
+        session, body.username.strip().lower(), settings.jwt_secret, settings.jwt_expire_min
+    )
+    session.commit()
+    return LoginResponse(
+        access_token=result.access_token,
+        expires_at=result.expires_at,
+        role=result.user.role,
+        must_change_password=False,
     )
 
 
